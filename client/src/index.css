@@ -1,0 +1,172 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+    /* Default Colors (can be overridden by JS) */
+    --color-primary: #004291;
+    --color-secondary: #92d050;
+}
+
+@layer base {
+    body {
+        @apply bg-gray-50 text-slate-900;
+    }
+}
+
+@media print {
+    :root {
+        --color-primary: #004291 !important;
+        --color-secondary: #92d050 !important;
+    }
+
+    body {
+        background-color: white !important;
+        background: white !important;
+        /* Ensure generic background is also white */
+        color: black !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+
+    /* Force all layout containers to have white background for Reinweiß */
+    /* Force page-level containers to have white background */
+    #root,
+    .min-h-screen,
+    main,
+    body,
+    html {
+        background-color: white !important;
+        background: white !important;
+    }
+
+    * {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+
+    * {
+        text-shadow: none !important;
+        box-shadow: none !important;
+    }
+
+    /* Force light mode backgrounds if they were dark */
+    .dark .bg-slate-800,
+    .dark .bg-slate-900 {
+        background-color: white !important;
+        color: black !important;
+    }
+
+    .dark .text-white,
+    .dark .text-gray-100 {
+        color: black !important;
+    }
+
+    /* Named Pages for Chrome/Edge */
+    @page {
+        margin: 5mm;
+        size: auto;
+    }
+
+    @page landscape {
+        size: landscape;
+        margin: 5mm;
+    }
+
+    @page portrait {
+        size: portrait;
+        margin: 5mm;
+    }
+
+    .print-portrait {
+        page: portrait;
+    }
+
+    .print-landscape {
+        page: landscape;
+    }
+
+    /* Print Layout for 6 Months: 6 cols explicitly in landscape */
+    .print\:grid-cols-6 {
+        display: grid !important;
+        grid-template-columns: repeat(6, 1fr) !important;
+        gap: 4px !important;
+        width: 100% !important;
+        align-items: start !important;
+    }
+
+    /* Reduce font size and padding everywhere in print to fit */
+    .print\:text-\[8pt\] {
+        font-size: 7pt !important;
+        line-height: 1.1 !important;
+    }
+
+    /* Ensure no breaks inside months */
+    .break-inside-avoid {
+        break-inside: avoid !important;
+        page-break-inside: avoid !important;
+    }
+
+    /* Additional safety to keep title with content */
+    h1 {
+        break-after: avoid !important;
+        page-break-after: avoid !important;
+    }
+
+    /* Hide everything else */
+    body>*:not(#root) {
+        display: none !important;
+    }
+
+    #root {
+        width: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+
+    /* For 1-month split view */
+    .print\:grid-cols-2-split {
+        display: grid !important;
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 20px !important;
+    }
+
+    .print\:grid-cols-3 {
+        display: grid !important;
+        grid-template-columns: repeat(3, 1fr) !important;
+        gap: 10px !important;
+    }
+
+    .print\:grid-size-xs {
+        font-size: 8pt !important;
+    }
+
+    /* Cleanups */
+    header,
+    footer,
+    nav,
+    .no-print,
+    .print\:hidden {
+        display: none !important;
+    }
+
+    /* Force even more compact layout if it doesn't fit */
+    .print-compact-force .print\:text-\[7pt\],
+    .print-compact-force .print\:text-\[8pt\] {
+        font-size: 6.2pt !important;
+        line-height: 1 !important;
+    }
+
+    .print-compact-force .print\:min-h-\[16px\] {
+        min-height: 14px !important;
+    }
+
+    .print-compact-force .print\:p-0\.5,
+    .print-compact-force .print\:p-1 {
+        padding: 0 !important;
+    }
+
+    .print-compact-force .print\:mb-1 {
+        margin-bottom: 0 !important;
+    }
+}
