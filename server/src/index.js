@@ -28,8 +28,7 @@ app.use('/api/public', publicRoutes);
 
 // --- Static Frontend (Production) ---
 const clientPath = path.join(__dirname, '../../client/dist');
-app.use('/kalender_new', express.static(clientPath)); // Subfolder support
-app.use(express.static(clientPath)); // Root fallback
+app.use(express.static(clientPath));
 
 // Sync Job (Every 5 minutes)
 cron.schedule('*/5 * * * *', () => {
