@@ -19,7 +19,7 @@ const ProtectedRoute = ({ children, requireAdmin = false }) => {
 
 const App = () => {
     return (
-        <BrowserRouter>
+        <BrowserRouter basename="/kalender_new">
             <AuthProvider>
                 <Routes>
                     <Route path="/print" element={<PrintView />} />
