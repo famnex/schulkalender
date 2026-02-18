@@ -26,24 +26,28 @@ app.use('/api/export', exportRoutes);
 app.use('/api/filters', require('./routes/filters'));
 app.use('/api/public', publicRoutes);
 
-// Static Frontend (Production)
+// --- Static Frontend (Production) ---
 const clientPath = path.join(__dirname, '../../client/dist');
 app.use(express.static(clientPath));
-
-// Catch-all for SPA Routing
-app.get('/:path*', (req, res) => {
-    if (req.path.startsWith('/api')) return res.status(404).json({ error: 'Not found' });
-    res.sendFile(path.join(clientPath, 'index.html'), (err) => {
-        if (err) {
-            res.status(500).send('Frontend not built. Please run "npm run build" in the client folder.');
-        }
-    });
-});
 
 // Sync Job (Every 5 minutes)
 cron.schedule('*/5 * * * *', () => {
     console.log('Running scheduled sync...');
     syncAllCalendars();
+});
+
+// Catch-all for SPA Routing (MUST BE LAST)
+app.use((req, res, next) => {
+    // If it's an API request that wasn't matched, return 404
+    if (req.path.startsWith('/api')) {
+        return res.status(404).json({ error: 'API endpoint not found' });
+    }
+    // Otherwise serve index.html for React routing
+    res.sendFile(path.join(clientPath, 'index.html'), (err) => {
+        if (err) {
+            res.status(500).send('Frontend build missing. Please run "npm run build" in the client folder.');
+        }
+    });
 });
 
 // Database Sync & Server Start
