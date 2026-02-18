@@ -26,6 +26,20 @@ app.use('/api/export', exportRoutes);
 app.use('/api/filters', require('./routes/filters'));
 app.use('/api/public', publicRoutes);
 
+// Static Frontend (Production)
+const clientPath = path.join(__dirname, '../../client/dist');
+app.use(express.static(clientPath));
+
+// Catch-all for SPA Routing
+app.get('*', (req, res) => {
+    if (req.path.startsWith('/api')) return res.status(404).json({ error: 'Not found' });
+    res.sendFile(path.join(clientPath, 'index.html'), (err) => {
+        if (err) {
+            res.status(500).send('Frontend not built. Please run "npm run build" in the client folder.');
+        }
+    });
+});
+
 // Sync Job (Every 5 minutes)
 cron.schedule('*/5 * * * *', () => {
     console.log('Running scheduled sync...');
