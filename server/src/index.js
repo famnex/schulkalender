@@ -16,15 +16,18 @@ const PORT = process.env.PORT || 3001;
 // Middleware
 app.use(cors());
 app.use(express.json());
-app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+app.use(['/kalender_new/uploads', '/uploads'], express.static(path.join(__dirname, '../uploads')));
 
 // Routes
-app.use('/api/auth', authRoutes);
-app.use('/api/admin', adminRoutes);
-app.use('/api/events', eventRoutes);
-app.use('/api/export', exportRoutes);
-app.use('/api/filters', require('./routes/filters'));
-app.use('/api/public', publicRoutes);
+const apiPaths = ['/kalender_new/api', '/api'];
+apiPaths.forEach(p => {
+    app.use(`${p}/auth`, authRoutes);
+    app.use(`${p}/admin`, adminRoutes);
+    app.use(`${p}/events`, eventRoutes);
+    app.use(`${p}/export`, exportRoutes);
+    app.use(`${p}/filters`, require('./routes/filters'));
+    app.use(`${p}/public`, publicRoutes);
+});
 
 // --- Static Frontend (Production) ---
 const clientPath = path.join(__dirname, '../../client/dist');

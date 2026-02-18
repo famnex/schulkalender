@@ -91,7 +91,11 @@ const Home = () => {
                 <div className="hidden print:flex justify-between items-end border-b border-black pb-1 mb-1 print:break-after-avoid">
                     <div className="flex items-center gap-4">
                         {settings.school_logo && (
-                            <img src={settings.school_logo} alt="Logo" className="h-6 w-auto object-contain" />
+                            <img
+                                src={settings.school_logo.startsWith('/') ? `${import.meta.env.BASE_URL.replace(/\/$/, '')}${settings.school_logo}` : settings.school_logo}
+                                alt="Logo"
+                                className="h-6 w-auto object-contain"
+                            />
                         )}
                         <span className="text-lg font-bold text-black uppercase">
                             {settings.school_name || 'Schulkalender'}

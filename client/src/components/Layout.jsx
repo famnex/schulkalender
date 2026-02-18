@@ -24,9 +24,20 @@ const Layout = () => {
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
                     <Link to="/" className="flex items-center gap-2">
                         {settings.school_logo ? (
-                            <img key="school-logo" src={settings.school_logo} alt="Logo" className="h-8 w-auto object-contain" />
+                            <img
+                                key="school-logo"
+                                src={settings.school_logo.startsWith('/') ? `${import.meta.env.BASE_URL.replace(/\/$/, '')}${settings.school_logo}` : settings.school_logo}
+                                alt="Logo"
+                                className="h-8 w-auto object-contain"
+                            />
                         ) : (
-                            <img key="default-logo" src="/logo.png" alt="Logo" className="h-8 w-auto" onError={(e) => e.target.style.display = 'none'} />
+                            <img
+                                key="default-logo"
+                                src={`${import.meta.env.BASE_URL}logo.png`}
+                                alt="Logo"
+                                className="h-8 w-auto"
+                                onError={(e) => e.target.style.display = 'none'}
+                            />
                         )}
                         <span className="text-xl font-bold text-primary dark:text-blue-400">
                             Schulkalender
