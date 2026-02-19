@@ -26,7 +26,13 @@ const Layout = () => {
                         {settings.school_logo ? (
                             <img
                                 key="school-logo"
-                                src={settings.school_logo.startsWith('/') ? `${import.meta.env.BASE_URL.replace(/\/$/, '')}${settings.school_logo}` : settings.school_logo}
+                                src={(() => {
+                                    const logo = settings.school_logo;
+                                    const baseUrl = import.meta.env.BASE_URL.replace(/\/$/, '');
+                                    if (logo.startsWith(baseUrl)) return logo;
+                                    if (logo.startsWith('/')) return `${baseUrl}${logo}`;
+                                    return logo;
+                                })()}
                                 alt="Logo"
                                 className="h-8 w-auto object-contain"
                             />

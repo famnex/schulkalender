@@ -119,7 +119,13 @@ const AdminGeneral = () => {
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Schullogo</label>
                         <div className="mt-1 flex items-center gap-4">
                             {settings.school_logo && (
-                                <img src={settings.school_logo} alt="Logo Preview" className="h-12 w-auto object-contain border rounded p-1 bg-gray-50 dark:bg-slate-700" />
+                                <img src={(() => {
+                                    const logo = settings.school_logo;
+                                    const baseUrl = import.meta.env.BASE_URL.replace(/\/$/, '');
+                                    if (logo.startsWith(baseUrl)) return logo;
+                                    if (logo.startsWith('/')) return `${baseUrl}${logo}`;
+                                    return logo;
+                                })()} alt="Logo Preview" className="h-12 w-auto object-contain border rounded p-1 bg-gray-50 dark:bg-slate-700" />
                             )}
                             <input
                                 type="file"
