@@ -160,7 +160,14 @@ router.get(['/ics', '/ics/:filename'], async (req, res) => {
         });
 
         // Generate ICS
-        let ics = "BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//Schulkalender//Export//DE\r\nCALSCALE:GREGORIAN\r\nMETHOD:PUBLISH\r\nX-WR-CALNAME:Schulkalender Export\r\nX-WR-TIMEZONE:Europe/Berlin\r\n";
+        // Determine Calendar Name
+        let calName = 'MSO Termine';
+        if (token) {
+            const saved = await SavedFilter.findByPk(token);
+            if (saved && saved.name) calName = saved.name;
+        }
+
+        let ics = `BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//Schulkalender//Export//DE\r\nCALSCALE:GREGORIAN\r\nMETHOD:PUBLISH\r\nX-WR-CALNAME:${calName}\r\nX-WR-TIMEZONE:Europe/Berlin\r\n`;
 
         const formatDate = (date, isAllDay, isEnd) => {
             if (isAllDay) {

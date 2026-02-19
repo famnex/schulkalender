@@ -212,7 +212,7 @@ const CalendarExportModal = ({ onClose, categories, tags }) => {
             }
         }
         // User requested http(s) link ending in .ics
-        setGeneratedUrl(`${protocol}//${host}/api/export/ics/schulkalender.ics?${query}`);
+        setGeneratedUrl(`${protocol}//${host}/kalender_new/api/export/ics/schulkalender.ics?${query}`);
     }, [selections, selectedFilterId]);
 
     const copyToClipboard = () => {

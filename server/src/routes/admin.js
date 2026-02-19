@@ -205,7 +205,7 @@ router.post('/settings/logo', upload.single('logo'), async (req, res) => {
         if (!req.file) {
             return res.status(400).json({ error: 'No file uploaded' });
         }
-        const logoUrl = `/uploads/${req.file.filename}`;
+        const logoUrl = `/kalender_new/uploads/${req.file.filename}`;
         await GlobalSettings.upsert({ key: 'school_logo', value: logoUrl });
         res.json({ success: true, url: logoUrl });
     } catch (err) {

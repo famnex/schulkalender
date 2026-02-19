@@ -60,7 +60,7 @@ const FilterPanel = ({ filters, onFilterChange, eventsLoading }) => {
             }
         }
 
-        const url = `${protocol}//${host}/api/export/ics/schulkalender.ics${query ? '?' + query : ''}`;
+        const url = `${protocol}//${host}/kalender_new/api/export/ics/schulkalender.ics${query ? '?' + query : ''}`;
 
         navigator.clipboard.writeText(url);
         setShared(true);
@@ -93,7 +93,7 @@ const FilterPanel = ({ filters, onFilterChange, eventsLoading }) => {
             params.set('startMonth', filters.startMonth);
             if (filters.tags.length > 0) params.set('tags', filters.tags.join(','));
 
-            const url = `${window.location.origin}/print?${params.toString()}`;
+            const url = `${window.location.origin}/kalender_new/print?${params.toString()}`;
             window.open(url, 'PrintView', 'toolbar=no,location=no,status=no,menubar=no,scrollbars=yes,resizable=yes,width=1000,height=800');
         } else {
             // For 6 months: do it in-place (landscape requested)
