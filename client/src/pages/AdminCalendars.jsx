@@ -16,7 +16,7 @@ const AdminCalendars = () => {
         setLoading(true);
         try {
             const res = await api.get('/admin/categories');
-            setCategories(res.data);
+            setCategories(Array.isArray(res.data) ? res.data : []);
         } catch (err) {
             console.error(err);
         } finally {
@@ -78,7 +78,7 @@ const AdminCalendars = () => {
                         </tr>
                     </thead>
                     <tbody className="bg-white dark:bg-slate-800 divide-y divide-gray-200 dark:divide-slate-700">
-                        {categories.map(cat => (
+                        {Array.isArray(categories) && categories.map(cat => (
                             <tr key={cat.id}>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">{cat.title}</td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{cat.shortName}</td>

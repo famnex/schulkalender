@@ -27,7 +27,7 @@ const AdminSync = () => {
         try {
             const res = await api.get('/admin/categories');
             console.log('Loaded categories:', res.data);
-            setCategories(res.data);
+            setCategories(Array.isArray(res.data) ? res.data : []);
         } catch (err) {
             console.error('Error loading categories:', err);
         }
@@ -39,9 +39,9 @@ const AdminSync = () => {
             const url = `/admin/events?page=${page}&limit=20&categoryId=${activeCategoryId}`;
             console.log('Fetching events from:', url);
             const res = await api.get(url);
-            setEvents(res.data.events);
-            setTotalEvents(res.data.total);
-            setTotalPages(res.data.totalPages);
+            setEvents(Array.isArray(res.data?.events) ? res.data.events : []);
+            setTotalEvents(res.data?.total || 0);
+            setTotalPages(res.data?.totalPages || 1);
         } catch (err) {
             console.error('Error loading events:', err);
         } finally {
@@ -102,7 +102,7 @@ const AdminSync = () => {
                     </button>
                 </div>
 
-                {(syncLogs.length > 0) && (
+                {(Array.isArray(syncLogs) && syncLogs.length > 0) && (
                     <div className="mt-6">
                         <h4 className="text-sm font-semibold mb-2 dark:text-white">Protokoll:</h4>
                         <div className="p-4 bg-black text-green-400 font-mono text-xs rounded h-64 overflow-y-auto shadow-inner border border-gray-700">
@@ -148,7 +148,7 @@ const AdminSync = () => {
                     >
                         Alle
                     </button>
-                    {categories.map(cat => (
+                    {Array.isArray(categories) && categories.map(cat => (
                         <button
                             key={cat.id}
                             onClick={() => { setActiveCategoryId(cat.id); setPage(1); }}
@@ -176,7 +176,7 @@ const AdminSync = () => {
                         <tbody className="bg-white dark:bg-slate-800 divide-y divide-gray-100 dark:divide-slate-700">
                             {loadingEvents ? (
                                 <tr><td colSpan="4" className="px-4 py-8 text-center text-gray-500">Lade Termine...</td></tr>
-                            ) : events.length === 0 ? (
+                            ) : (!Array.isArray(events) || events.length === 0) ? (
                                 <tr><td colSpan="4" className="px-4 py-8 text-center text-gray-500">Keine Termine gefunden.</td></tr>
                             ) : (
                                 events.map(evt => (

@@ -3,6 +3,7 @@ import api from '../api';
 import FilterPanel from '../components/FilterPanel';
 import CalendarGrid from '../components/CalendarGrid';
 import { format } from 'date-fns';
+import clsx from 'clsx';
 
 const Home = () => {
     const [filters, setFilters] = useState({
@@ -23,9 +24,20 @@ const Home = () => {
             api.get('/public/categories'),
             api.get('/public/settings')
         ]).then(([catRes, setRes]) => {
-            setCategories(catRes.data);
+            setCategories(Array.isArray(catRes.data) ? catRes.data : []);
             setSettings(setRes.data || {});
         }).catch(console.error);
+    }, []);
+
+    const [isMobile, setIsMobile] = useState(false);
+
+    useEffect(() => {
+        const checkMobile = () => {
+            setIsMobile(window.innerWidth < 1024);
+        };
+        checkMobile();
+        window.addEventListener('resize', checkMobile);
+        return () => window.removeEventListener('resize', checkMobile);
     }, []);
 
     useEffect(() => {
@@ -87,7 +99,11 @@ const Home = () => {
             />
 
             {/* Print Header */}
-            <div className={`print:block ${filters.printMonths === 1 ? 'print-portrait' : 'print-landscape'} print:break-inside-avoid`}>
+            <div className={clsx(
+                "print:block print:break-inside-avoid",
+                filters.printMonths === 1 ? 'print-portrait' : 'print-landscape',
+                filters.printMonths === 12 && 'print-a3'
+            )}>
                 <div className="hidden print:flex justify-between items-end border-b border-black pb-1 mb-1 print:break-after-avoid">
                     <div className="flex items-center gap-4">
                         {settings.school_logo && (
@@ -114,7 +130,7 @@ const Home = () => {
                                 if (filters.token) {
                                     return filters.filterName || 'Mein Kalender';
                                 }
-                                const cat = categories.find(c => c.id == filters.categoryId);
+                                const cat = Array.isArray(categories) ? categories.find(c => c.id == filters.categoryId) : null;
                                 if (!cat) return 'Gesamtübersicht';
                                 let title = cat.title;
                                 if (filters.categoryId == '5' && filters.stufe && filters.stufe !== '0') {
@@ -129,7 +145,7 @@ const Home = () => {
                 <CalendarGrid
                     events={events}
                     startMonthStr={filters.startMonth}
-                    monthsToShow={filters.printMonths || 6}
+                    monthsToShow={filters.printMonths || (isMobile ? 6 : 3)}
                     settings={settings}
                 />
 

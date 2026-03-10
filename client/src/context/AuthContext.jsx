@@ -8,6 +8,12 @@ export const AuthProvider = ({ children }) => {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
+        const handleAuthFailure = () => {
+            logout();
+        };
+
+        window.addEventListener('auth-failure', handleAuthFailure);
+
         const token = localStorage.getItem('token');
         if (token) {
             api.get('/auth/me')
@@ -15,13 +21,16 @@ export const AuthProvider = ({ children }) => {
                     setUser(res.data);
                 })
                 .catch(() => {
-                    localStorage.removeItem('token');
-                    setUser(null);
+                    logout();
                 })
                 .finally(() => setLoading(false));
         } else {
             setLoading(false);
         }
+
+        return () => {
+            window.removeEventListener('auth-failure', handleAuthFailure);
+        };
     }, []);
 
     const login = async (username, password) => {

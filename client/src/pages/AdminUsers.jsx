@@ -11,7 +11,7 @@ const AdminUsers = () => {
         setLoading(true);
         try {
             const res = await api.get('/admin/users');
-            setUsers(res.data);
+            setUsers(Array.isArray(res.data) ? res.data : []);
         } catch (err) {
             console.error(err);
         } finally {
@@ -93,7 +93,7 @@ const AdminUsers = () => {
 
             <div className="bg-white dark:bg-slate-800 shadow overflow-hidden sm:rounded-md">
                 <ul className="divide-y divide-gray-200 dark:divide-slate-700">
-                    {users.map(user => (
+                    {Array.isArray(users) && users.map(user => (
                         <li key={user.id} className="px-6 py-4 flex items-center justify-between">
                             <div>
                                 <div className="text-sm font-medium text-primary dark:text-blue-400">{user.username}</div>

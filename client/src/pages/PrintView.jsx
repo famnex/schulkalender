@@ -22,11 +22,11 @@ const PrintView = () => {
             try {
                 // 1. Load Settings
                 const settingsRes = await api.get('/public/settings');
-                setSettings(settingsRes.data);
+                setSettings(settingsRes.data || {});
 
                 // 2. Load Categories (for title)
                 const catsRes = await api.get('/public/categories');
-                setCategories(catsRes.data);
+                setCategories(Array.isArray(catsRes.data) ? catsRes.data : []);
 
                 // 3. Load Events
                 // Build query params
@@ -63,7 +63,7 @@ const PrintView = () => {
                     }
                 }
 
-                setEvents(fetchedEvents);
+                setEvents(Array.isArray(fetchedEvents) ? fetchedEvents : []);
 
             } catch (err) {
                 console.error("Failed to load print data", err);
@@ -89,7 +89,7 @@ const PrintView = () => {
         if (token) return filterName || 'Mein Kalender';
 
         let title = 'Schulkalender';
-        const cat = categories.find(c => c.id == categoryId);
+        const cat = Array.isArray(categories) ? categories.find(c => c.id == categoryId) : null;
         if (cat) {
             title = cat.title;
             if (categoryId == '5' && stufe && stufe !== '0') {

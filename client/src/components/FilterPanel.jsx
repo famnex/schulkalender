@@ -23,10 +23,12 @@ const FilterPanel = ({ filters, onFilterChange, eventsLoading }) => {
                     api.get('/public/categories'),
                     api.get('/public/tags')
                 ]);
-                setCategories(catRes.data);
-                setTags(tagRes.data);
+                setCategories(Array.isArray(catRes.data) ? catRes.data : []);
+                setTags(Array.isArray(tagRes.data) ? tagRes.data : []);
             } catch (err) {
                 console.error('Failed to load filters', err);
+                setCategories([]);
+                setTags([]);
             }
         };
         fetchData();
@@ -35,7 +37,10 @@ const FilterPanel = ({ filters, onFilterChange, eventsLoading }) => {
     // Load saved filters if user
     useEffect(() => {
         if (user) {
-            api.get('/filters').then(res => setSavedFilters(res.data)).catch(console.error);
+            api.get('/filters').then(res => setSavedFilters(Array.isArray(res.data) ? res.data : [])).catch(err => {
+                console.error('Failed to load filters', err);
+                setSavedFilters([]);
+            });
         }
     }, [user, showExportModal]); // Reload when export modal closes (might have saved new one)
 
@@ -70,7 +75,7 @@ const FilterPanel = ({ filters, onFilterChange, eventsLoading }) => {
         const val = e.target.value;
         if (val.startsWith('saved:')) {
             const token = val.split(':')[1];
-            const foundFilter = savedFilters.find(f => f.id == token);
+            const foundFilter = Array.isArray(savedFilters) ? savedFilters.find(f => f.id == token) : null;
             const name = foundFilter ? foundFilter.name : '';
             onFilterChange({ ...filters, categoryId: val, token, stufe: '', tags: [], filterName: name });
         } else {
@@ -107,10 +112,10 @@ const FilterPanel = ({ filters, onFilterChange, eventsLoading }) => {
     const [isExpanded, setIsExpanded] = useState(false);
 
     // Filter displayed categories (No Ferien/Feiertage)
-    const displayCategories = categories.filter(c => {
+    const displayCategories = Array.isArray(categories) ? categories.filter(c => {
         const t = (c.title || '').toLowerCase();
         return !t.includes('ferien') && !t.includes('feiertag');
-    });
+    }) : [];
 
     return (
         <div className="bg-white dark:bg-slate-800 p-4 rounded-lg shadow-sm border border-gray-200 dark:border-slate-700 mb-6 print:hidden">
@@ -146,7 +151,7 @@ const FilterPanel = ({ filters, onFilterChange, eventsLoading }) => {
                             <option key={c.id} value={c.id}>{c.title}</option>
                         ))}
 
-                        {savedFilters.length > 0 && (
+                        {Array.isArray(savedFilters) && savedFilters.length > 0 && (
                             <>
                                 <option disabled>-----------</option>
                                 <optgroup label="Meine Kalender">
@@ -227,6 +232,9 @@ const FilterPanel = ({ filters, onFilterChange, eventsLoading }) => {
                             </button>
                             <button onClick={() => handlePrint(6)} className="w-full text-left px-2 py-1.5 hover:bg-gray-100 dark:hover:bg-slate-600 rounded text-sm text-gray-700 dark:text-gray-200">
                                 6 Monate (Querformat)
+                            </button>
+                            <button onClick={() => handlePrint(12)} className="w-full text-left px-2 py-1.5 hover:bg-gray-100 dark:hover:bg-slate-600 rounded text-sm text-gray-700 dark:text-gray-200">
+                                12 Monate (A3 Querformat)
                             </button>
                         </div>
                     )}

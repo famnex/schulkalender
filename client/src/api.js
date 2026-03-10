@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const api = axios.create({
-    baseURL: '/kalender_new/api',
+    baseURL: import.meta.env.DEV ? '/kalender_new/api' : '/kalender_new/api', // Keep it consistent for now
 });
 
 api.interceptors.request.use((config) => {
@@ -17,8 +17,8 @@ api.interceptors.response.use(
     (error) => {
         if (error.response && error.response.status === 401) {
             localStorage.removeItem('token');
-            // Optionally redirect to login, but better handled in context/components
-            // window.location.href = '/login'; 
+            // Notify the app about auth failure
+            window.dispatchEvent(new CustomEvent('auth-failure'));
         }
         return Promise.reject(error);
     }

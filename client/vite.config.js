@@ -13,7 +13,17 @@ export default defineConfig({
     },
     server: {
         proxy: {
+            '/kalender_new/api': {
+                target: 'http://localhost:3001',
+                changeOrigin: true,
+                secure: false,
+            },
             '/api': {
+                target: 'http://localhost:3001',
+                changeOrigin: true,
+                secure: false,
+            },
+            '/kalender_new/uploads': {
                 target: 'http://localhost:3001',
                 changeOrigin: true,
                 secure: false,

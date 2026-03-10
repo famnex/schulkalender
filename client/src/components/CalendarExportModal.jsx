@@ -20,11 +20,11 @@ const CalendarExportModal = ({ onClose, categories, tags }) => {
     const [isEditingName, setIsEditingName] = useState(false);
 
     // Helpers
-    const getCategoryTags = (catId) => tags.filter(t => t.categoryId === catId);
+    const getCategoryTags = (catId) => Array.isArray(tags) ? tags.filter(t => t.categoryId === catId) : [];
 
     // Initial Filter of Columns
     useEffect(() => {
-        if (categories) {
+        if (Array.isArray(categories)) {
             const filtered = categories.filter(c => {
                 const title = (c.title || '').toLowerCase();
                 return !title.includes('ferien') && !title.includes('feiertag');
@@ -48,7 +48,7 @@ const CalendarExportModal = ({ onClose, categories, tags }) => {
     const fetchFilters = async () => {
         try {
             const res = await api.get('/filters');
-            setSavedFilters(res.data);
+            setSavedFilters(Array.isArray(res.data) ? res.data : []);
         } catch (err) {
             console.error("Failed to fetch filters", err);
         }
@@ -69,7 +69,7 @@ const CalendarExportModal = ({ onClose, categories, tags }) => {
     const handleTagToggle = (catId, tagId) => {
         setSelections(prev => {
             const current = prev[catId] || { mode: 'none', tags: [], stufe: '' };
-            const allCatTags = getCategoryTags(catId).map(t => t.id || t.name);
+            const allCatTags = (Array.isArray(tags) ? getCategoryTags(catId) : []).map(t => t.id || t.name);
             let newTags = [];
             let newMode = current.mode;
 
@@ -231,7 +231,7 @@ const CalendarExportModal = ({ onClose, categories, tags }) => {
                         <button onClick={handleNewFilter} className="p-1 hover:bg-gray-200 dark:hover:bg-slate-700 rounded text-primary" title="Neu"><Plus size={20} /></button>
                     </div>
                     <div className="flex-1 overflow-y-auto p-2 space-y-1">
-                        {savedFilters.map(filter => (
+                        {Array.isArray(savedFilters) && savedFilters.map(filter => (
                             <div
                                 key={filter.id}
                                 onClick={() => loadFilter(filter)}

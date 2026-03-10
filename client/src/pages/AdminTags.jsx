@@ -20,8 +20,8 @@ const AdminTags = () => {
                 api.get('/admin/tags'),
                 api.get('/admin/categories')
             ]);
-            setTags(tagRes.data);
-            setCategories(catRes.data);
+            setTags(Array.isArray(tagRes.data) ? tagRes.data : []);
+            setCategories(Array.isArray(catRes.data) ? catRes.data : []);
         } catch (err) {
             console.error(err);
         } finally {
@@ -81,11 +81,11 @@ const AdminTags = () => {
                         </tr>
                     </thead>
                     <tbody className="bg-white dark:bg-slate-800 divide-y divide-gray-200 dark:divide-slate-700">
-                        {tags.map(tag => (
+                        {Array.isArray(tags) && tags.map(tag => (
                             <tr key={tag.id}>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">{tag.name} (ID: {tag.id})</td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                    {categories.find(c => c.id === tag.categoryId)?.title || tag.categoryId}
+                                    {(Array.isArray(categories) ? categories.find(c => c.id === tag.categoryId)?.title : null) || tag.categoryId}
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                     <button onClick={() => openModal({ ...tag, exists: true })} className="text-indigo-600 hover:text-indigo-900 mr-4"><PencilIcon className="h-4 w-4" /></button>
@@ -122,7 +122,7 @@ const AdminTags = () => {
                                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Kategorie</label>
                                         <select value={editingItem.categoryId || ''} onChange={e => setEditingItem({ ...editingItem, categoryId: e.target.value })} className="mt-1 block w-full border-gray-300 rounded-md shadow-sm sm:text-sm p-2">
                                             <option value="">Bitte wählen...</option>
-                                            {categories.map(c => <option key={c.id} value={c.id}>{c.title}</option>)}
+                                            {Array.isArray(categories) && categories.map(c => <option key={c.id} value={c.id}>{c.title}</option>)}
                                         </select>
                                     </div>
                                 </div>

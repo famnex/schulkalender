@@ -14,6 +14,29 @@
     }
 }
 
+@media (min-width: 1024px) {
+    .grid-cols-3 {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .grid-cols-6 {
+        grid-template-columns: repeat(6, minmax(0, 1fr));
+    }
+
+    .grid-cols-12 {
+        grid-template-columns: repeat(12, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 1023px) {
+
+    .grid-cols-6,
+    .grid-cols-12 {
+        grid-template-columns: 1fr !important;
+        gap: 1rem !important;
+    }
+}
+
 @media print {
     :root {
         --color-primary: #004291 !important;
@@ -78,6 +101,11 @@
         margin: 5mm;
     }
 
+    @page a3-landscape {
+        size: A3 landscape;
+        margin: 5mm;
+    }
+
     .print-portrait {
         page: portrait;
     }
@@ -86,13 +114,27 @@
         page: landscape;
     }
 
+    .print-a3 {
+        page: a3-landscape;
+    }
+
     /* Print Layout for 6 Months: 6 cols explicitly in landscape */
     .print\:grid-cols-6 {
         display: grid !important;
-        grid-template-columns: repeat(6, 1fr) !important;
-        gap: 4px !important;
+        grid-template-columns: repeat(6, minmax(0, 1fr)) !important;
+        gap: 0 !important;
         width: 100% !important;
-        align-items: start !important;
+        min-width: 100% !important;
+        align-items: stretch !important;
+    }
+
+    .print\:grid-cols-12 {
+        display: grid !important;
+        grid-template-columns: repeat(12, minmax(0, 1fr)) !important;
+        gap: 0 !important;
+        width: 100% !important;
+        min-width: 100% !important;
+        align-items: stretch !important;
     }
 
     /* Reduce font size and padding everywhere in print to fit */
@@ -150,23 +192,27 @@
         display: none !important;
     }
 
-    /* Force even more compact layout if it doesn't fit */
-    .print-compact-force .print\:text-\[7pt\],
-    .print-compact-force .print\:text-\[8pt\] {
-        font-size: 6.2pt !important;
+    /* Extreme Compact for 12 months side-by-side */
+    .print-a3 .print\:text-\[6pt\],
+    .print-a3 .print\:text-\[7pt\],
+    .print-a3 .print\:text-\[8pt\] {
+        font-size: 5.5pt !important;
         line-height: 1 !important;
     }
 
-    .print-compact-force .print\:min-h-\[16px\] {
-        min-height: 14px !important;
-    }
-
-    .print-compact-force .print\:p-0\.5,
-    .print-compact-force .print\:p-1 {
+    .print-a3 .print\:p-1\.5,
+    .print-a3 .print\:p-1,
+    .print-a3 .print\:p-0\.5 {
         padding: 0 !important;
     }
 
-    .print-compact-force .print\:mb-1 {
-        margin-bottom: 0 !important;
+    .print-a3 .w-6.print\:w-5 {
+        width: 12px !important;
+    }
+
+    /* Force parent containers to full width for A3 */
+    .print-a3 {
+        width: 100% !important;
+        max-width: none !important;
     }
 }
