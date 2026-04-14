@@ -47,9 +47,10 @@ const FilterPanel = ({ filters, onFilterChange, eventsLoading, onOpenNewEvent, o
 
     // Fetch pending count
     useEffect(() => {
-        if (user && (user.isAdmin === true || user.isAdmin === 1)) {
-            api.get('/admin/events/pending')
-               .then(res => setPendingCount(res.data.length))
+        const isAdminRoute = user && (user.isAdmin === true || user.isAdmin === 1);
+        if (isAdminRoute) {
+            api.get(`/admin/events/pending?_t=${new Date().getTime()}`)
+               .then(res => setPendingCount(Array.isArray(res.data) ? res.data.length : 0))
                .catch(console.error);
         }
     }, [user, filters]);

@@ -80,7 +80,8 @@ const Home = () => {
                     categoryId: (categoryId && categoryId !== '0' && !categoryId.startsWith('saved:')) ? categoryId : undefined,
                     stufe: stufe || undefined,
                     tags: tags && tags.length > 0 ? tags.join(',') : undefined,
-                    token: token || undefined
+                    token: token || undefined,
+                    _t: new Date().getTime() // Hard Cache-Busting für aggressive Reverse Proxies
                 };
 
                 const res = await api.get('/events', { params });

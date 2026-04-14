@@ -11,7 +11,7 @@ const PendingEventsModal = ({ onClose, onEventPublished, onEditEvent }) => {
     const fetchPending = async () => {
         setLoading(true);
         try {
-            const res = await api.get('/admin/events/pending');
+            const res = await api.get(`/admin/events/pending?_t=${new Date().getTime()}`);
             setEvents(Array.isArray(res.data) ? res.data : []);
         } catch (err) {
             console.error(err);
