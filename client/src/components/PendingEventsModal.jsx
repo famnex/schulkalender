@@ -12,7 +12,7 @@ const PendingEventsModal = ({ onClose, onEventPublished, onEditEvent }) => {
         setLoading(true);
         try {
             const res = await api.get('/admin/events/pending');
-            setEvents(res.data);
+            setEvents(Array.isArray(res.data) ? res.data : []);
         } catch (err) {
             console.error(err);
         } finally {

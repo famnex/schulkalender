@@ -84,7 +84,7 @@ const Home = () => {
                 };
 
                 const res = await api.get('/events', { params });
-                setEvents(res.data);
+                setEvents(Array.isArray(res.data) ? res.data : []);
             } catch (err) {
                 console.error('Failed to load events', err);
             } finally {

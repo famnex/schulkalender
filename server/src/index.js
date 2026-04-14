@@ -16,6 +16,17 @@ const PORT = process.env.PORT || 3001;
 // Middleware
 app.use(cors());
 app.use(express.json());
+
+// API No-Cache Middleware - verhindert serverseitiges Caching von API Queries
+app.use((req, res, next) => {
+    if (req.path.includes('/api/')) {
+        res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+        res.setHeader('Pragma', 'no-cache');
+        res.setHeader('Expires', '0');
+    }
+    next();
+});
+
 app.use(['/kalender_new/uploads', '/uploads'], express.static(path.join(__dirname, '../uploads')));
 
 // Routes
