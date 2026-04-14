@@ -102,15 +102,17 @@ try {
 
     } else {
         log('Pulling latest changes from git...');
-        // Redirect stdio to log file is tricky with execSync, so we capture output
         try {
-            // Explicitly pull origin main to avoid tracking issues
+            // Force clean untracked files before pulling so git never gets stuck
+            execSync('git clean -fd', { cwd: ROOT_DIR, stdio: 'ignore' });
+            execSync('git reset --hard origin/main', { cwd: ROOT_DIR, stdio: 'ignore' });
+            
             const output = execSync('git pull origin main', { cwd: ROOT_DIR, encoding: 'utf8' });
             log(output);
         } catch (e) {
             log('Git Pull Error: ' + e.message);
-            log(e.stdout);
-            log(e.stderr);
+            if (e.stdout) log(e.stdout);
+            if (e.stderr) log(e.stderr);
             throw e;
         }
     }
@@ -180,7 +182,17 @@ try {
     }
 
     log('Update completed successfully.');
-    log('Exiting process to trigger restart...');
+    
+    // Force Node restart via PM2
+    try {
+        log('Restarting backend via PM2...');
+        execSync('pm2 restart all');
+        log('PM2 restart command emitted successfully.');
+    } catch (e) {
+        log('PM2 restart skipped (maybe PM2 is not installed globally): ' + e.message);
+    }
+    
+    log('Exiting update process...');
     process.exit(0);
 
 } catch (error) {
