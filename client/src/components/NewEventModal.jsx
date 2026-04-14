@@ -118,6 +118,12 @@ const NewEventModal = ({ onClose, categories, tags = [], onEventCreated, editEve
         setLoading(true);
         setError(null);
 
+        if (formData.categoryId === '0' || formData.categoryId === 0) {
+            setError('Bitte wählen Sie zuerst eine Kategorie (z.B. Klassenarbeiten) aus!');
+            setLoading(false);
+            return;
+        }
+
         const description = selectedTags.length > 0 ? selectedTags.join('\n') + '\n' : '';
         const payload = { ...formData, description };
 

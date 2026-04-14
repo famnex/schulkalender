@@ -175,8 +175,8 @@ router.post('/', authenticateToken, async (req, res) => {
     try {
         const { title, categoryId, start, end, isAllDay, location, description } = req.body;
         
-        if (!title || !categoryId || !start || !end) {
-            return res.status(400).json({ error: 'Bitte füllen Sie alle Pflichtfelder aus.' });
+        if (!title || !categoryId || categoryId === '0' || categoryId === 0 || !start || !end) {
+            return res.status(400).json({ error: 'Bitte füllen Sie alle Pflichtfelder aus und wählen Sie eine Kategorie.' });
         }
 
         const customId = 'MANUAL_' + crypto.randomBytes(8).toString('hex');

@@ -68,7 +68,7 @@ cron.schedule('*/5 * * * *', () => {
 // Catch-all for SPA Routing (MUST BE LAST)
 app.use((req, res, next) => {
     // If it's an API request that wasn't matched, return 404
-    if (req.path.startsWith('/api')) {
+    if (req.path.includes('/api/')) {
         return res.status(404).json({ error: 'API endpoint not found' });
     }
     // Otherwise serve index.html for React routing
