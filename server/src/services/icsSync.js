@@ -293,14 +293,16 @@ async function syncAllCalendars() {
                             location: location,
                             categoryId: categoryId,
                             isAllDay: ganztag,
-                            type: type
+                            type: type,
+                            isManual: false,
+                            status: 'published'
                         });
                     }
                 }
 
                 if (eventRecords.length > 0) {
                     await Event.bulkCreate(eventRecords, {
-                        updateOnDuplicate: ['title', 'start', 'end', 'description', 'location', 'isAllDay', 'type', 'categoryId'],
+                        updateOnDuplicate: ['title', 'start', 'end', 'description', 'location', 'isAllDay', 'type', 'categoryId', 'isManual', 'status'],
                         transaction
                     });
                 }
