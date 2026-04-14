@@ -37,6 +37,18 @@ const Event = sequelize.define('Event', {
     type: { // "default", "holiday", "vacation"
         type: DataTypes.STRING,
         defaultValue: 'default'
+    },
+    isManual: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: false
+    },
+    status: {
+        type: DataTypes.STRING,
+        defaultValue: 'published' // 'pending' | 'published'
+    },
+    creatorId: {
+        type: DataTypes.INTEGER,
+        allowNull: true
     }
 });
 

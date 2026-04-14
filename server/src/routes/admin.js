@@ -234,11 +234,11 @@ router.post('/ldap/test', async (req, res) => {
     }
 });
 
-// --- Events Management ---
+// --- Events Management (Replaced by public user routes except for pending/publish) ---
 router.delete('/events/clear', async (req, res) => {
     try {
-        await Event.destroy({ where: {}, truncate: false }); // Truncate might fail on some SQLite setups with FK, use where: {}
-        res.json({ success: true, message: 'All events deleted' });
+        await Event.destroy({ where: { isManual: false }, truncate: false }); // Truncate might fail on some SQLite setups with FK, use where: { isManual: false } to keep custom events
+        res.json({ success: true, message: 'All synced events deleted' });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
@@ -279,6 +279,33 @@ router.get('/events', async (req, res) => {
     } catch (err) {
         console.error(err);
         res.status(500).json({ error: 'Failed to fetch events' });
+    }
+});
+
+router.get('/events/pending', async (req, res) => {
+    try {
+        const events = await Event.findAll({
+            where: { status: 'pending' },
+            order: [['start', 'ASC']],
+            include: [{ model: Category, attributes: ['title'] }]
+        });
+        res.json(events);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Failed to fetch pending events' });
+    }
+});
+
+router.put('/events/:id/publish', async (req, res) => {
+    try {
+        const evt = await Event.findByPk(req.params.id);
+        if (!evt) return res.status(404).json({ error: 'Termin nicht gefunden' });
+        
+        await evt.update({ status: 'published' });
+        res.json({ success: true, event: evt });
+    } catch (err) {
+        console.error('Publish event error:', err);
+        res.status(500).json({ error: err.message });
     }
 });
 

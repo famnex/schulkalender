@@ -2,10 +2,12 @@ const express = require('express');
 const router = express.Router();
 const { Event, Category, Tag, SavedFilter, Op } = require('../models');
 const { parseISO, startOfMonth, endOfMonth, addMonths, format } = require('date-fns');
+const { authenticateToken, optionalAuthenticateToken } = require('../middleware/auth');
+const crypto = require('crypto');
 
 // GET /api/events
 // Query params: start (YYYY-MM), end (YYYY-MM), categoryId, tags (comma separated), stufe
-router.get('/', async (req, res) => {
+router.get('/', optionalAuthenticateToken, async (req, res) => {
     try {
         const { start, end, categoryId, tags, stufe } = req.query;
 
@@ -145,11 +147,15 @@ router.get('/', async (req, res) => {
                         { type: ['holiday', 'vacation'] }
                     ]
                 });
-            } else {
-                // No filters -> Return all?
-                // Usually yes.
             }
         }
+
+        // Apply Status Logic
+        const statusOr = [{ status: 'published' }];
+        if (req.user) {
+            statusOr.push({ status: 'pending', creatorId: req.user.id });
+        }
+        where[Op.and].push({ [Op.or]: statusOr });
 
         const events = await Event.findAll({
             where,
@@ -161,6 +167,123 @@ router.get('/', async (req, res) => {
     } catch (err) {
         console.error(err);
         res.status(500).json({ error: 'Failed to fetch events' });
+    }
+});
+
+// CREATE EVENT
+router.post('/', authenticateToken, async (req, res) => {
+    try {
+        const { title, categoryId, start, end, isAllDay, location, description } = req.body;
+        
+        if (!title || !categoryId || !start || !end) {
+            return res.status(400).json({ error: 'Bitte füllen Sie alle Pflichtfelder aus.' });
+        }
+
+        const customId = 'MANUAL_' + crypto.randomBytes(8).toString('hex');
+        const cat = await Category.findByPk(categoryId);
+        let type = 'default';
+        if (cat) {
+            if (cat.title.toLowerCase().includes('ferien')) type = 'vacation';
+            if (cat.title.toLowerCase().includes('feiertag')) type = 'holiday';
+        }
+
+        const newEvent = await Event.create({
+            id: customId,
+            title,
+            start: new Date(start),
+            end: new Date(end),
+            isAllDay: Boolean(isAllDay),
+            location: location || '',
+            description: description || '',
+            categoryId,
+            type,
+            isManual: true,
+            status: req.user.isAdmin ? 'published' : 'pending',
+            creatorId: req.user.id
+        });
+
+        res.json({ success: true, event: newEvent });
+    } catch (err) {
+        res.status(500).json({ error: 'Fehler beim Erstellen des Termins', details: err.message });
+    }
+});
+
+// UPDATE EVENT
+router.put('/:id', authenticateToken, async (req, res) => {
+    try {
+        const evt = await Event.findByPk(req.params.id);
+        if (!evt) return res.status(404).json({ error: 'Termin nicht gefunden' });
+        
+        if (!evt.isManual) {
+            return res.status(403).json({ error: 'Gesyncte Termine können nicht bearbeitet werden.' });
+        }
+        
+        // Permission check
+        if (!req.user.isAdmin) {
+            if (evt.creatorId !== req.user.id) {
+                return res.status(403).json({ error: 'Sie dürfen diesen Termin nicht bearbeiten.' });
+            }
+            if (evt.status !== 'pending') {
+                return res.status(403).json({ error: 'Veröffentlichte Termine können nicht mehr bearbeitet werden.' });
+            }
+        }
+
+        const { title, categoryId, start, end, isAllDay, location, description } = req.body;
+        const cat = await Category.findByPk(categoryId);
+        let type = 'default';
+        if (cat) {
+            if (cat.title.toLowerCase().includes('ferien')) type = 'vacation';
+            if (cat.title.toLowerCase().includes('feiertag')) type = 'holiday';
+        }
+
+        const updateData = {
+            title,
+            start: new Date(start),
+            end: new Date(end),
+            isAllDay: Boolean(isAllDay),
+            location: location || '',
+            description: description || '',
+            categoryId,
+            type,
+            isManual: true
+        };
+
+        if (req.user.isAdmin && req.body.status) {
+            updateData.status = req.body.status;
+        }
+
+        await evt.update(updateData);
+
+        res.json({ success: true, event: evt });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// DELETE EVENT
+router.delete('/:id', authenticateToken, async (req, res) => {
+    try {
+        const evt = await Event.findByPk(req.params.id);
+        if (!evt) return res.status(404).json({ error: 'Termin nicht gefunden' });
+        
+        if (!evt.isManual) {
+            return res.status(403).json({ error: 'Gesyncte Termine können nicht gelöscht werden.' });
+        }
+
+        // Permission check
+        if (!req.user.isAdmin) {
+            if (evt.creatorId !== req.user.id) {
+                return res.status(403).json({ error: 'Sie dürfen diesen Termin nicht bearbeiten.' });
+            }
+            if (evt.status !== 'pending') {
+                return res.status(403).json({ error: 'Veröffentlichte Termine können nicht mehr gelöscht werden.' });
+            }
+        }
+
+        await evt.destroy();
+        res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
     }
 });
 

@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import api from '../api';
 import { useAuth } from '../context/AuthContext';
-import { Filter, Calendar as CalIcon, RefreshCw, Printer, Search, CalendarPlus, ChevronDown, ChevronUp, Share, Check } from 'lucide-react';
+import { Filter, Calendar as CalIcon, RefreshCw, Printer, Search, CalendarPlus, ChevronDown, ChevronUp, Share, Check, Plus, LayoutGrid, List, Inbox } from 'lucide-react';
 import clsx from 'clsx';
 import CalendarExportModal from './CalendarExportModal';
 
-const FilterPanel = ({ filters, onFilterChange, eventsLoading }) => {
+const FilterPanel = ({ filters, onFilterChange, eventsLoading, onOpenNewEvent, onOpenApprovals }) => {
     const { user } = useAuth();
     const [categories, setCategories] = useState([]);
     const [tags, setTags] = useState([]);
@@ -14,6 +14,7 @@ const FilterPanel = ({ filters, onFilterChange, eventsLoading }) => {
     const [showPrintDialog, setShowPrintDialog] = useState(false);
     const [showExportModal, setShowExportModal] = useState(false);
     const [shared, setShared] = useState(false);
+    const [pendingCount, setPendingCount] = useState(0);
 
     // Load categories/tags on mount
     useEffect(() => {
@@ -42,7 +43,16 @@ const FilterPanel = ({ filters, onFilterChange, eventsLoading }) => {
                 setSavedFilters([]);
             });
         }
-    }, [user, showExportModal]); // Reload when export modal closes (might have saved new one)
+    }, [user, showExportModal]);
+
+    // Fetch pending count
+    useEffect(() => {
+        if (user && (user.isAdmin === true || user.isAdmin === 1)) {
+            api.get('/admin/events/pending')
+               .then(res => setPendingCount(res.data.length))
+               .catch(console.error);
+        }
+    }, [user, filters]);
 
     const handleShare = () => {
         const protocol = window.location.protocol;
@@ -192,36 +202,107 @@ const FilterPanel = ({ filters, onFilterChange, eventsLoading }) => {
                     {eventsLoading && <RefreshCw className="animate-spin text-gray-400 hidden md:block" size={20} />}
 
                     <div className="flex gap-1">
-                        <button
-                            onClick={() => setShowExportModal(true)}
-                            className="flex items-center justify-center gap-2 px-3 py-2 bg-blue-100 hover:bg-blue-200 text-blue-700 hover:text-blue-800 rounded-l-md transition-colors dark:bg-slate-700 dark:text-blue-300 dark:hover:bg-slate-600"
-                            title="Individuellen Kalender erstellen"
-                        >
-                            <CalendarPlus size={18} />
-                            <span>Individuell</span>
-                        </button>
-                        <button
-                            onClick={handleShare}
-                            className="flex items-center justify-center px-3 py-2 bg-blue-100 hover:bg-blue-200 text-blue-700 hover:text-blue-800 rounded-r-md border-l border-blue-200 dark:border-slate-600 transition-colors dark:bg-slate-700 dark:text-blue-300 dark:hover:bg-slate-600"
-                            title="Kalender-Abo-Link teilen"
-                        >
-                            {shared ? <Check size={18} className="text-green-600" /> : <Share size={18} />}
-                        </button>
+                        {/* View Mode Toggle */}
+                        <div className="flex bg-gray-100 dark:bg-slate-700 p-1 rounded-lg shrink-0">
+                            <button
+                                onClick={() => onFilterChange({ ...filters, viewMode: 'grid' })}
+                                className={clsx(
+                                    "p-1.5 rounded-md flex items-center justify-center transition-colors",
+                                    (!filters.viewMode || filters.viewMode === 'grid') ? "bg-white dark:bg-slate-600 shadow-sm text-blue-600 dark:text-blue-400" : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
+                                )}
+                                title="Kalenderansicht"
+                            >
+                                <LayoutGrid size={18} />
+                            </button>
+                            <button
+                                onClick={() => onFilterChange({ ...filters, viewMode: 'list' })}
+                                className={clsx(
+                                    "p-1.5 rounded-md flex items-center justify-center transition-colors",
+                                    filters.viewMode === 'list' ? "bg-white dark:bg-slate-600 shadow-sm text-blue-600 dark:text-blue-400" : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
+                                )}
+                                title="Listenansicht"
+                            >
+                                <List size={18} />
+                            </button>
+                        </div>
 
-                        {shared && (
-                            <div className="absolute bottom-full mb-2 right-0 bg-slate-800 text-white text-xs p-2 rounded shadow-lg z-50 animate-in fade-in slide-in-from-bottom-1 w-48 pointer-events-none">
-                                Abo-Link kopiert! Importiere diesen Link in dein Kalenderprogramm (Outlook, Google, etc.).
-                            </div>
+                        <div className="hidden sm:block w-px bg-gray-200 dark:bg-slate-700 my-1.5 mx-1"></div>
+
+                        {/* Export / Share / Print */}
+                        <div className="flex gap-2">
+                            <button
+                                onClick={() => setShowExportModal(true)}
+                                className="flex shrink-0 items-center justify-center px-3 py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg transition-colors dark:bg-slate-700 dark:text-blue-300 dark:hover:bg-slate-600 border border-blue-100 dark:border-transparent"
+                                title="Kalender Feed / ICS Link generieren"
+                            >
+                                <CalendarPlus size={18} className="mr-1.5" />
+                                <span className="hidden sm:inline font-medium text-sm">Kalender-Abo</span>
+                            </button>
+                            <button
+                                onClick={handleShare}
+                                className={clsx(
+                                    "flex shrink-0 items-center justify-center px-3 py-2 rounded-lg transition-all duration-300 border border-blue-100 dark:border-transparent",
+                                    shared 
+                                        ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400" 
+                                        : "bg-blue-50 hover:bg-blue-100 text-blue-700 dark:bg-slate-700 dark:text-blue-300 dark:hover:bg-slate-600"
+                                )}
+                                title="Link zur aktuellen Filter-Ansicht kopieren"
+                            >
+                                {shared ? <Check size={18} /> : <Share size={18} />}
+                            </button>
+                            <button
+                                onClick={() => {
+                                    if (filters.viewMode === 'list') {
+                                        window.print();
+                                    } else {
+                                        setShowPrintDialog(!showPrintDialog);
+                                    }
+                                }}
+                                className={clsx(
+                                    "flex shrink-0 items-center justify-center px-3 py-2 border rounded-lg transition-colors dark:border-transparent",
+                                    showPrintDialog 
+                                        ? "bg-gray-200 border-gray-300 text-gray-900 dark:bg-slate-600 dark:text-white"
+                                        : "bg-gray-50 border-gray-200 hover:bg-gray-100 text-gray-700 hover:text-gray-900 dark:bg-slate-700 dark:text-gray-300 dark:hover:bg-slate-600"
+                                )}
+                                title="Ansicht drucken"
+                            >
+                                <Printer size={18} className="sm:mr-1.5" />
+                                <span className="hidden sm:inline font-medium text-sm">Drucken</span>
+                            </button>
+                        </div>
+
+                        {/* User/Admin Actions */}
+                        {user && (
+                            <>
+                                <div className="hidden sm:block w-px bg-gray-200 dark:bg-slate-700 my-1.5 mx-1"></div>
+                                {(user.isAdmin === true || user.isAdmin === 1) && (
+                                    <div className="relative mr-2">
+                                        <button
+                                            onClick={onOpenApprovals}
+                                            className="flex shrink-0 items-center justify-center px-3 py-2 bg-yellow-100 hover:bg-yellow-200 text-yellow-700 hover:text-yellow-800 rounded-lg transition-colors dark:bg-yellow-900/40 dark:text-yellow-400 dark:hover:bg-yellow-900/60 border border-yellow-200 dark:border-transparent shadow-sm"
+                                            title="Terminfreigaben verwalten"
+                                        >
+                                            <Inbox size={18} className="sm:mr-1" />
+                                            <span className="hidden sm:inline font-medium text-sm">Freigaben</span>
+                                        </button>
+                                        {pendingCount > 0 && (
+                                            <span className="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full z-10 shadow-sm border border-white dark:border-slate-800">
+                                                {pendingCount}
+                                            </span>
+                                        )}
+                                    </div>
+                                )}
+                                <button
+                                    onClick={onOpenNewEvent}
+                                    className="flex shrink-0 items-center justify-center px-3 py-2 bg-green-100 hover:bg-green-200 text-green-700 hover:text-green-800 rounded-lg transition-colors dark:bg-slate-700 dark:text-green-300 dark:hover:bg-slate-600 border border-green-200 dark:border-transparent shadow-sm"
+                                    title="Neuen Termin anlegen"
+                                >
+                                    <Plus size={18} className="sm:mr-1" />
+                                    <span className="hidden sm:inline font-medium text-sm">Neu</span>
+                                </button>
+                            </>
                         )}
                     </div>
-
-                    <button
-                        onClick={() => setShowPrintDialog(!showPrintDialog)}
-                        className="flex items-center justify-center gap-2 px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-md transition-colors dark:bg-slate-700 dark:text-gray-200 dark:hover:bg-slate-600"
-                    >
-                        <Printer size={18} />
-                        <span>Drucken</span>
-                    </button>
 
                     {/* Print Dialog Popover */}
                     {showPrintDialog && (
@@ -248,7 +329,6 @@ const FilterPanel = ({ filters, onFilterChange, eventsLoading }) => {
                         onClose={() => setShowExportModal(false)}
                     />
                 )}
-
             </div>
         </div>
     );

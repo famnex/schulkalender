@@ -33,6 +33,9 @@ Importierte Termine aus den ICS-Quellen.
 - `categoryId`: INTEGER (Fremdschlüssel zu `Categories.id`)
 - `isAllDay`: BOOLEAN, Default: false
 - `type`: STRING, Default: 'default' (z.B. 'holiday', 'vacation')
+- `isManual`: BOOLEAN, Default: false (Gibt an, ob Termin manuell im System angelegt wurde)
+- `status`: STRING, Default: 'published' ('pending' für User-Einsendungen, 'published' für freigegebene)
+- `creatorId`: INTEGER (Fremdschlüssel zu `Users.id`, optional)
 
 ### `Tags`
 Erlaubte Steuerbefehle in der Terminbeschreibung.

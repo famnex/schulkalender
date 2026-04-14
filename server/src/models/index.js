@@ -16,6 +16,9 @@ Tag.belongsTo(Category, { foreignKey: 'categoryId' });
 Category.hasMany(Event, { foreignKey: 'categoryId' });
 Event.belongsTo(Category, { foreignKey: 'categoryId' });
 
+User.hasMany(Event, { foreignKey: 'creatorId' });
+Event.belongsTo(User, { foreignKey: 'creatorId' });
+
 const { Op } = require('sequelize');
 
 module.exports = {

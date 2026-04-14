@@ -31,8 +31,22 @@ apiPaths.forEach(p => {
 
 // --- Static Frontend (Production) ---
 const clientPath = path.join(__dirname, '../../client/dist');
-app.use('/kalender_new', express.static(clientPath)); // Subfolder support
-app.use(express.static(clientPath));
+const staticOptions = {
+    setHeaders: (res, pathStr) => {
+        if (pathStr.endsWith('.html')) {
+            // Niemals index.html cachen, damit Updates sofort ankommen!
+            res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+            res.setHeader('Pragma', 'no-cache');
+            res.setHeader('Expires', '0');
+        } else {
+            // Statische Assets (JS/CSS) dürfen gecached werden (haben einen Hash im Namen)
+            res.setHeader('Cache-Control', 'public, max-age=31536000');
+        }
+    }
+};
+
+app.use('/kalender_new', express.static(clientPath, staticOptions)); // Subfolder support
+app.use(express.static(clientPath, staticOptions));
 
 // Sync Job (Every 5 minutes)
 cron.schedule('*/5 * * * *', () => {
@@ -47,7 +61,13 @@ app.use((req, res, next) => {
         return res.status(404).json({ error: 'API endpoint not found' });
     }
     // Otherwise serve index.html for React routing
-    res.sendFile(path.join(clientPath, 'index.html'), (err) => {
+    res.sendFile(path.join(clientPath, 'index.html'), {
+        headers: {
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0'
+        }
+    }, (err) => {
         if (err) {
             res.status(500).send('Frontend build missing. Please run "npm run build" in the client folder.');
         }

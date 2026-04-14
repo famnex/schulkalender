@@ -4,7 +4,7 @@ import { de } from 'date-fns/locale';
 import clsx from 'clsx';
 
 
-const CalendarGrid = ({ events, startMonthStr, monthsToShow = 6, settings = {} }) => {
+const CalendarGrid = ({ events, startMonthStr, monthsToShow = 6, settings = {}, onEventClick }) => {
     const containerRef = React.useRef(null);
     const [isTooTall, setIsTooTall] = React.useState(false);
     const [tooltip, setTooltip] = React.useState(null); // { x, y, content }
@@ -64,6 +64,30 @@ const CalendarGrid = ({ events, startMonthStr, monthsToShow = 6, settings = {} }
     const holidayTextColor = settings.holiday_text_color || '#991B1B';
     const weekendColor = settings.weekend_color || '#F3F4F6';
     const weekendTextColor = settings.weekend_text_color || '#4B5563';
+
+    const getPrintTimeStr = (evt, currentDay) => {
+        if (evt.isAllDay) return '';
+        const start = new Date(evt.start);
+        const end = new Date(evt.end);
+        
+        const isStartDay = isSameDay(start, currentDay);
+        const isEndDay = isSameDay(end, currentDay);
+
+        const startStr = format(start, 'HH:mm');
+        const endStr = format(end, 'HH:mm');
+
+        if (isStartDay && isEndDay) {
+            if (startStr === endStr) return `(${startStr})`; 
+            return `(${startStr} - ${endStr})`;
+        } else if (isStartDay) {
+            return `(ab ${startStr})`;
+        } else if (isEndDay) {
+             if (endStr === '00:00' || endStr === '') return '';
+             return `(bis ${endStr})`;
+        } else {
+            return '';
+        }
+    };
 
     // Custom styling helper
     const getDayStyle = (date, dayEvents) => {
@@ -209,18 +233,54 @@ const CalendarGrid = ({ events, startMonthStr, monthsToShow = 6, settings = {} }
                                         {dayNum}
                                     </div>
                                     <div className="flex-grow p-1 lg:p-0.5 overflow-hidden flex flex-col justify-center print:p-0">
-                                        {dayEvents.slice(0, 3).map((evt) => (
-                                            <div
-                                                key={evt.id}
-                                                className="leading-tight mb-1 lg:mb-0.5 text-[15px] lg:text-[14px] print:text-[6pt] break-words cursor-help magnify-target hover:bg-black/5 dark:hover:bg-white/5 transition-colors duration-150 px-0.5 rounded"
-                                                onMouseEnter={(e) => handleEventEnter(e, evt.title)}
-                                                onMouseLeave={handleEventLeave}
-                                                onTouchStart={(e) => handleEventEnter(e, evt.title)}
-                                                onTouchEnd={handleEventLeave}
-                                            >
-                                                {evt.title}
-                                            </div>
-                                        ))}
+                                        {dayEvents.slice(0, 5).map((evt) => {
+                                            const evtStart = new Date(evt.start);
+                 const evtEnd = new Date(evt.end);
+                 
+                                            const printTime = getPrintTimeStr(evt, date);
+                                            const timeStr = (!evt.isAllDay && isSameDay(evtStart, date)) ? format(evtStart, 'HH:mm') : '';
+                 const isMultiDay = !isSameDay(evtStart, evtEnd);
+                 
+                 const isFirstDayOfEvent = isSameDay(evtStart, date);
+                 const startsBefore = isBefore(evtStart, date);
+                 const isFirstDayOfMonth = date.getDate() === 1;
+                 const endsAfter = isAfter(evtEnd, date) || isSameDay(evtEnd, date);
+                 
+                 // Display only on first day of event, OR first day of the month (if event started previously)
+                 const showInDisplay = isFirstDayOfEvent || (startsBefore && endsAfter && isFirstDayOfMonth);
+
+                                            return (
+                                                <div
+                                                    key={evt.id}
+                                                    className={clsx(
+                                                        "leading-tight mb-1 lg:mb-0.5 text-[15px] lg:text-[14px] print:text-[6pt] break-words cursor-help magnify-target hover:bg-black/5 dark:hover:bg-white/5 transition-colors duration-150 px-0.5 rounded",
+                                                        showInDisplay ? "block print:block" : "hidden print:block"
+                                                    )}
+                                                    onMouseEnter={(e) => handleEventEnter(e, evt.title)}
+                                                    onMouseLeave={handleEventLeave}
+                                                    onTouchStart={(e) => handleEventEnter(e, evt.title)}
+                                                    onTouchEnd={handleEventLeave}
+                                                    onClick={() => onEventClick && onEventClick(evt)}
+                                                >
+                                                    {/* Screen View */}
+                                                    <span className="print:hidden flex gap-1 flex-wrap items-center">
+                                                        {timeStr && <span className="bg-blue-100 dark:bg-blue-900/40 px-1 rounded text-[10px] text-blue-800 dark:text-blue-300 font-mono">{timeStr}</span>}
+                                                        <span>{evt.title}</span>
+                                                        {evt.status === 'pending' && <span className="ml-0.5 inline-block w-1.5 h-1.5 rounded-full bg-yellow-500" title="Wartet auf Freigabe"></span>}
+                                                        {isMultiDay && (
+                                                            <span className="inline-block px-1 rounded bg-green-100 dark:bg-green-900/40 text-green-800 dark:text-green-300 text-[10px] font-mono whitespace-nowrap">
+                                                                bis {format(evtEnd, 'dd.MM.')}
+                                                            </span>
+                                                        )}
+                                                    </span>
+                                                    {/* Print Version uses text time */}
+                                                    <span className="hidden print:inline">
+                                                        {printTime && <span className="mr-1">{printTime}</span>}
+                                                        <span>{evt.title}</span>
+                                                    </span>
+                                                </div>
+                                            );
+                                        })}
                                     </div>
 
                                     {/* Aligned Grid KW Indicator (Only on Mondays) */}
@@ -283,22 +343,46 @@ const CalendarGrid = ({ events, startMonthStr, monthsToShow = 6, settings = {} }
                                     const startsBefore = isBefore(evtStart, day);
                                     const endsAfter = isAfter(evtEnd, day) || isSameDay(evtEnd, day);
 
-                                    const showEvent = isFirstDayOfEvent || (isFirstDayOfMonth && startsBefore && endsAfter && monthIdx === 0);
-                                    if (!showEvent) return null;
-
+                                    const showInDisplay = isFirstDayOfEvent || (isFirstDayOfMonth && startsBefore && endsAfter && monthIdx === 0);
+                                    
+                                    const isMultiDay = !isSameDay(evtStart, evtEnd);
                                     const timeStr = evt.isAllDay ? '' : format(evtStart, 'HH:mm');
+                                    const printTime = getPrintTimeStr(evt, day);
+                                    
                                     return (
                                         <div
                                             key={evt.id}
-                                            className="leading-tight mb-1.5 lg:mb-1 cursor-help px-1 rounded magnify-target hover:bg-black/5 dark:hover:bg-white/5 transition-colors duration-150"
+                                            className={clsx(
+                                                "leading-tight mb-1.5 lg:mb-1 cursor-help px-1 rounded magnify-target hover:bg-black/5 dark:hover:bg-white/5 transition-colors duration-150",
+                                                showInDisplay ? 'block print:block' : 'hidden print:block'
+                                            )}
                                             onMouseEnter={(e) => handleEventEnter(e, evt.title)}
                                             onMouseLeave={handleEventLeave}
                                             onTouchStart={(e) => handleEventEnter(e, evt.title)}
                                             onTouchEnd={handleEventLeave}
+                                            onClick={() => onEventClick && onEventClick(evt)}
                                         >
                                             <div className="flex flex-wrap items-baseline gap-1 break-words text-[16px] lg:text-[15px] print:text-[7pt]">
-                                                {timeStr && <span className="bg-blue-100 dark:bg-blue-900/40 px-1 rounded text-[11px] lg:text-[10px]">{timeStr}</span>}
-                                                <span className={evt.type === 'holiday' || evt.type === 'vacation' ? 'font-medium' : ''}>{evt.title}</span>
+                                                {/* SCREEN VIEW */}
+                                                <span className="print:hidden flex flex-wrap items-baseline gap-1">
+                                                    {timeStr && (
+                                                        <span className="inline-block px-1 rounded bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-300 text-[11px] lg:text-[10px] font-mono whitespace-nowrap">
+                                                            {timeStr}
+                                                        </span>
+                                                    )}
+                                                    <span className={evt.type === 'holiday' || evt.type === 'vacation' ? 'font-medium' : ''}>{evt.title}</span>
+                                                    {evt.status === 'pending' && <span className="ml-0.5 inline-block w-1.5 h-1.5 rounded-full bg-yellow-500" title="Wartet auf Freigabe"></span>}
+                                                    {isMultiDay && (
+                                                        <span className="inline-block px-1 rounded bg-green-100 dark:bg-green-900/40 text-green-800 dark:text-green-300 text-[11px] lg:text-[10px] font-mono whitespace-nowrap">
+                                                            bis {format(evtEnd, 'dd.MM.')}
+                                                        </span>
+                                                    )}
+                                                </span>
+                                                {/* PRINT VIEW */}
+                                                <span className="hidden print:inline-flex items-baseline gap-1">
+                                                    {printTime && <span className="mr-0.5">{printTime}</span>}
+                                                    <span className={evt.type === 'holiday' || evt.type === 'vacation' ? 'font-medium' : ''}>{evt.title}</span>
+                                                </span>
                                             </div>
                                         </div>
                                     );

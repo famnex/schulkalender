@@ -15,4 +15,20 @@ const authenticateToken = (req, res, next) => {
     });
 };
 
-module.exports = { authenticateToken };
+const optionalAuthenticateToken = (req, res, next) => {
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1];
+
+    if (!token) {
+        return next();
+    }
+
+    jwt.verify(token, JWT_SECRET, (err, user) => {
+        if (!err) {
+            req.user = user;
+        }
+        next();
+    });
+};
+
+module.exports = { authenticateToken, optionalAuthenticateToken };
