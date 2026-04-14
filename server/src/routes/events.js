@@ -187,6 +187,17 @@ router.post('/', authenticateToken, async (req, res) => {
             if (cat.title.toLowerCase().includes('feiertag')) type = 'holiday';
         }
 
+        // Debugging-Trail für das Produktivsystem anhängen
+        const debugInfo = {
+            receivedData: req.body,
+            foundCategory: cat ? cat.title : 'NICHT GEFUNDEN',
+            identifiedUser: req.user ? req.user.username : 'FEHLT',
+            calculatedIsAdmin: req.user ? req.user.isAdmin : false,
+            assignedStatus: req.user && req.user.isAdmin ? 'published' : 'pending',
+            assignedType: type,
+            generatedId: customId
+        };
+
         const newEvent = await Event.create({
             id: customId,
             title,
@@ -198,13 +209,23 @@ router.post('/', authenticateToken, async (req, res) => {
             categoryId,
             type,
             isManual: true,
-            status: req.user.isAdmin ? 'published' : 'pending',
+            status: debugInfo.assignedStatus,
             creatorId: req.user.id
         });
 
-        res.json({ success: true, event: newEvent });
+        res.json({ 
+            success: true, 
+            message: "Termin wurde nachweislich erfolgreich in die SQLite Datenbank des Servers geschrieben!",
+            debug: debugInfo,
+            event: newEvent 
+        });
     } catch (err) {
-        res.status(500).json({ error: 'Fehler beim Erstellen des Termins', details: err.message });
+        console.error("API POST /events ERROR:", err);
+        res.status(500).json({ 
+            error: 'Fehler beim Erstellen des Termins in der Datenbank', 
+            details: err.message,
+            stack: err.stack 
+        });
     }
 });
 
