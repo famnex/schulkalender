@@ -73,36 +73,42 @@ const NewEventModal = ({ onClose, categories, tags = [], onEventCreated, editEve
                 setSelectedTags([]);
             }
 
-            // Date validation & shifting logic
-            if (name === 'start' || name === 'end' || name === 'isAllDay') {
-                const s = new Date(nextData.start);
-                const e = new Date(nextData.end);
+            return nextData;
+        });
+    };
 
-                if (!isNaN(s) && !isNaN(e)) {
-                    if (name === 'start') {
-                        // If Start is pushed after End
-                        if (s > e) {
-                            if (nextData.isAllDay) {
-                                nextData.end = nextData.start; // Same day
-                            } else {
-                                const newEnd = new Date(s.getTime() + 90 * 60000);
-                                nextData.end = formatDate(newEnd, false);
-                            }
+    const verifyDates = (e) => {
+        const { name } = e.target;
+        if (name !== 'start' && name !== 'end') return;
+
+        setFormData(prev => {
+            const nextData = { ...prev };
+            const s = new Date(nextData.start);
+            const evtEnd = new Date(nextData.end);
+
+            if (!isNaN(s) && !isNaN(evtEnd)) {
+                if (name === 'start') {
+                    // If Start is pushed after End
+                    if (s > evtEnd) {
+                        if (nextData.isAllDay) {
+                            nextData.end = nextData.start; // Same day
+                        } else {
+                            const newEnd = new Date(s.getTime() + 90 * 60000);
+                            nextData.end = formatDate(newEnd, false);
                         }
-                    } else if (name === 'end') {
-                        // If End is pushed before Start
-                        if (e < s) {
-                            if (nextData.isAllDay) {
-                                nextData.start = nextData.end; // Same day
-                            } else {
-                                const newStart = new Date(e.getTime() - 90 * 60000);
-                                nextData.start = formatDate(newStart, false);
-                            }
+                    }
+                } else if (name === 'end') {
+                    // If End is pushed before Start
+                    if (evtEnd < s) {
+                        if (nextData.isAllDay) {
+                            nextData.start = nextData.end; // Same day
+                        } else {
+                            const newStart = new Date(evtEnd.getTime() - 90 * 60000);
+                            nextData.start = formatDate(newStart, false);
                         }
                     }
                 }
             }
-
             return nextData;
         });
     };
@@ -262,6 +268,7 @@ const NewEventModal = ({ onClose, categories, tags = [], onEventCreated, editEve
                                         required
                                         value={formData.start}
                                         onChange={handleChange}
+                                        onBlur={verifyDates}
                                         className="w-full form-input rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring focus:ring-green-500 focus:ring-opacity-50 dark:bg-slate-700 dark:border-slate-600 dark:text-white"
                                     />
                                 </div>
@@ -275,6 +282,7 @@ const NewEventModal = ({ onClose, categories, tags = [], onEventCreated, editEve
                                         required
                                         value={formData.end}
                                         onChange={handleChange}
+                                        onBlur={verifyDates}
                                         className="w-full form-input rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring focus:ring-green-500 focus:ring-opacity-50 dark:bg-slate-700 dark:border-slate-600 dark:text-white"
                                     />
                                 </div>
