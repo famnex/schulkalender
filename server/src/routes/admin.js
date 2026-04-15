@@ -3,6 +3,7 @@ const router = express.Router();
 const { User, Category, Tag, GlobalSettings, Event } = require('../models');
 const { testLdapConnection } = require('../utils/ldap');
 const { syncAllCalendars } = require('../services/icsSync');
+const { sendTestEmail, sendReminderEmail } = require('../services/mailService');
 const jwt = require('jsonwebtoken');
 const multer = require('multer');
 const path = require('path');
@@ -229,6 +230,28 @@ router.post('/ldap/test', async (req, res) => {
     try {
         await testLdapConnection(req.body.config, req.body.username, req.body.password);
         res.json({ success: true });
+    } catch (err) {
+        res.status(400).json({ error: err.message });
+    }
+});
+
+// --- E-Mail Test & Reminder ---
+router.post('/email/test', async (req, res) => {
+    try {
+        await sendTestEmail(req.body.config);
+        res.json({ success: true, message: 'Test-E-Mail gesendet!' });
+    } catch (err) {
+        res.status(400).json({ error: err.message });
+    }
+});
+
+router.post('/email/trigger-reminder', async (req, res) => {
+    try {
+        const result = await sendReminderEmail();
+        if (!result) {
+            return res.json({ success: true, message: 'Keine offenen Termine oder E-Mail (ink. Empfänger) nicht konfiguriert/inaktiv.' });
+        }
+        res.json({ success: true, message: `Erinnerung für ${result.count} Termine gesendet.` });
     } catch (err) {
         res.status(400).json({ error: err.message });
     }

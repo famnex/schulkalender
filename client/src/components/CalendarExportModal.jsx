@@ -222,10 +222,11 @@ const CalendarExportModal = ({ onClose, categories, tags }) => {
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-            <div className="bg-white dark:bg-slate-800 w-full max-w-4xl rounded-xl shadow-2xl flex flex-col md:flex-row max-h-[90vh] overflow-hidden">
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-black/50 backdrop-blur-sm">
+            <div className="flex min-h-full items-center justify-center p-4">
+                <div className="bg-white dark:bg-slate-800 w-full max-w-4xl rounded-xl shadow-2xl flex flex-col md:flex-row md:max-h-[90vh] md:overflow-hidden">
 
-                <div className="w-full md:w-64 bg-gray-50 dark:bg-slate-900 border-r border-gray-200 dark:border-slate-700 flex flex-col">
+                    <div className="w-full md:w-64 bg-gray-50 dark:bg-slate-900 md:border-r border-gray-200 dark:border-slate-700 flex flex-col shrink-0">
                     <div className="p-4 border-b border-gray-200 dark:border-slate-800 flex justify-between items-center">
                         <span className="font-semibold text-gray-700 dark:text-gray-300">Meine Kalender</span>
                         <button onClick={handleNewFilter} className="p-1 hover:bg-gray-200 dark:hover:bg-slate-700 rounded text-primary" title="Neu"><Plus size={20} /></button>
@@ -370,6 +371,7 @@ const CalendarExportModal = ({ onClose, categories, tags }) => {
                         <button onClick={handleSave} className="px-6 py-2 bg-primary hover:bg-primary-dark text-white rounded-lg flex items-center gap-2"><Save size={18} /> Speichern</button>
                     </div>
                 </div>
+            </div>
             </div>
         </div>
     );

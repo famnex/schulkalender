@@ -1,6 +1,6 @@
 {
   "name": "server",
-  "version": "0.1.2",
+  "version": "0.2.0",
   "description": "",
   "main": "src/index.js",
   "scripts": {
@@ -25,6 +25,7 @@
     "ldapjs": "^3.0.7",
     "multer": "^2.0.2",
     "node-cron": "^4.2.1",
+    "nodemailer": "^8.0.5",
     "sequelize": "^6.37.7",
     "sqlite3": "^5.1.7"
   }

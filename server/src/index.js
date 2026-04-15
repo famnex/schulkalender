@@ -8,6 +8,7 @@ const eventRoutes = require('./routes/events');
 const exportRoutes = require('./routes/export');
 const publicRoutes = require('./routes/public');
 const { syncAllCalendars } = require('./services/icsSync');
+const { sendReminderEmail } = require('./services/mailService');
 const cron = require('node-cron');
 
 const app = express();
@@ -63,6 +64,16 @@ app.use(express.static(clientPath, staticOptions));
 cron.schedule('*/5 * * * *', () => {
     console.log('Running scheduled sync...');
     syncAllCalendars();
+});
+
+// Reminder Job (Daily at 08:00)
+cron.schedule('0 8 * * *', async () => {
+    console.log('Running daily email reminder setup...');
+    try {
+        await sendReminderEmail();
+    } catch (err) {
+        console.error('Error sending daily reminder:', err.message);
+    }
 });
 
 // Catch-all for SPA Routing (MUST BE LAST)
