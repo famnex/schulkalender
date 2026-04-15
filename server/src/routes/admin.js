@@ -365,16 +365,30 @@ router.get('/update/check', async (req, res) => {
         // Fetch latest info
         execSync('git fetch', { cwd });
 
+        // Get local branch and remote target
+        const currentBranch = execSync('git rev-parse --abbrev-ref HEAD', { cwd, encoding: 'utf8' }).trim();
+        const remoteTarget = `origin/${currentBranch === 'HEAD' ? 'master' : currentBranch}`;
+
         // Get local and remote hashes
         const localHash = execSync('git rev-parse HEAD', { cwd, encoding: 'utf8' }).trim();
-        const remoteHash = execSync('git rev-parse origin/main', { cwd, encoding: 'utf8' }).trim();
+        let remoteHash = localHash; // fallback
+        try {
+            remoteHash = execSync(`git rev-parse ${remoteTarget}`, { cwd, encoding: 'utf8' }).trim();
+        } catch (e) {
+            // fallback to origin/main or origin/master if remote branch is completely unknown
+            try { remoteHash = execSync('git rev-parse origin/main', { cwd, encoding: 'utf8' }).trim(); } catch(e2) {
+                try { remoteHash = execSync('git rev-parse origin/master', { cwd, encoding: 'utf8' }).trim(); } catch(e3) {}
+            }
+        }
 
         const isBehind = localHash !== remoteHash;
 
         // Get commit message
         let message = '';
         if (isBehind) {
-            message = execSync('git log HEAD..origin/main --oneline', { cwd, encoding: 'utf8' }).trim();
+            try {
+                message = execSync(`git log HEAD..${remoteHash} --oneline`, { cwd, encoding: 'utf8' }).trim();
+            } catch(e) {}
         }
 
         res.json({
