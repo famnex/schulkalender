@@ -1,6 +1,6 @@
 {
     "name": "schulkalender",
-    "version": "0.2.0",
+    "version": "0.2.9",
     "private": true,
     "scripts": {
         "server": "cd server && npm run dev",
