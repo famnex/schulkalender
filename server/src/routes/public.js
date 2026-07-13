@@ -8,8 +8,8 @@ router.get('/settings', async (req, res) => {
         const settings = await GlobalSettings.findAll();
         const config = {};
         settings.forEach(s => {
-            // Exclude sensitive LDAP info
-            if (!s.key.startsWith('ldap_bind') && !s.key.includes('password')) {
+            // Exclude sensitive LDAP and SSO info
+            if (!s.key.startsWith('ldap_bind') && !s.key.includes('password') && !s.key.includes('secret')) {
                 config[s.key] = s.value;
             }
         });

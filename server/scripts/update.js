@@ -117,13 +117,20 @@ try {
         }
     }
 
-    // 3. Install Dependencies (Root/Server)
+    // 3. Install Dependencies (Root & Server)
+    log('Installing root dependencies...');
+    try {
+        execSync('npm install', { cwd: ROOT_DIR, encoding: 'utf8' });
+    } catch (e) {
+        log('Root NPM Install Error: ' + e.message);
+    }
+
     log('Installing server dependencies...');
     try {
-        const output = execSync('npm install', { cwd: ROOT_DIR, encoding: 'utf8' });
+        const output = execSync('npm install', { cwd: SERVER_DIR, encoding: 'utf8' });
         log(output);
     } catch (e) {
-        log('NPM Install Error: ' + e.message);
+        log('Server NPM Install Error: ' + e.message);
         throw e;
     }
 

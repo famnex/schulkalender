@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { Users, Settings, Database, Calendar, Tag, ShieldCheck, ArrowUpCircle, Mail } from 'lucide-react';
+import { Users, Settings, Database, Calendar, Tag, ShieldCheck, ArrowUpCircle, Mail, Key } from 'lucide-react';
 import AdminUsers from './AdminUsers';
 import AdminGeneral from './AdminGeneral';
 import AdminLdap from './AdminLdap';
+import AdminSso from './AdminSso';
 import AdminEmail from './AdminEmail';
 import AdminCalendars from './AdminCalendars';
 import AdminTags from './AdminTags';
@@ -17,6 +18,7 @@ const AdminDashboard = () => {
             case 'sync': return <AdminSync />;
             case 'users': return <AdminUsers />;
             case 'ldap': return <AdminLdap />;
+            case 'sso': return <AdminSso />;
             case 'email': return <AdminEmail />;
             case 'calendars': return <AdminCalendars />;
             case 'tags': return <AdminTags />;
@@ -34,6 +36,7 @@ const AdminDashboard = () => {
                 <TabButton id="sync" label="Sync & Status" icon={<Database size={18} />} active={activeTab} onClick={setActiveTab} />
                 <TabButton id="users" label="Benutzer" icon={<Users size={18} />} active={activeTab} onClick={setActiveTab} />
                 <TabButton id="ldap" label="LDAP / AD" icon={<ShieldCheck size={18} />} active={activeTab} onClick={setActiveTab} />
+                <TabButton id="sso" label="SSO (JWT)" icon={<Key size={18} />} active={activeTab} onClick={setActiveTab} />
                 <TabButton id="email" label="E-Mail" icon={<Mail size={18} />} active={activeTab} onClick={setActiveTab} />
                 <TabButton id="calendars" label="Kalender" icon={<Calendar size={18} />} active={activeTab} onClick={setActiveTab} />
                 <TabButton id="tags" label="Tags" icon={<Tag size={18} />} active={activeTab} onClick={setActiveTab} />

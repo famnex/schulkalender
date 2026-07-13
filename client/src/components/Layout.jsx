@@ -14,8 +14,14 @@ const Layout = () => {
     }, []);
 
     const handleLogout = () => {
+        const isSSO = user?.isSSO;
+        const redirectUrl = settings.sso_logout_redirect;
         logout();
-        navigate('/');
+        if (isSSO && redirectUrl) {
+            window.location.href = redirectUrl;
+        } else {
+            navigate('/');
+        }
     };
 
     return (
@@ -59,8 +65,11 @@ const Layout = () => {
                                         <Settings size={20} />
                                     </Link>
                                 )}
-                                <button onClick={handleLogout} className="p-2 text-gray-500 hover:text-red-600 dark:text-gray-400 dark:hover:text-red-400" title="Abmelden">
+                                <button onClick={handleLogout} className="flex items-center gap-1 p-2 text-gray-500 hover:text-red-600 dark:text-gray-400 dark:hover:text-red-400" title={user?.isSSO && settings.sso_logout_button_text ? settings.sso_logout_button_text : "Abmelden"}>
                                     <LogOut size={20} />
+                                    {user?.isSSO && settings.sso_logout_button_text && (
+                                        <span className="text-sm font-medium hidden sm:inline">{settings.sso_logout_button_text}</span>
+                                    )}
                                 </button>
                             </>
                         ) : (

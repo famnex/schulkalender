@@ -22,7 +22,7 @@ const User = sequelize.define('User', {
         allowNull: true // Null allowed for LDAP users if needed
     },
     authMethod: {
-        type: DataTypes.ENUM('local', 'ldap'),
+        type: DataTypes.ENUM('local', 'ldap', 'sso'),
         defaultValue: 'local'
     },
     isAdmin: {

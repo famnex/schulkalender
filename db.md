@@ -10,7 +10,7 @@ Benutzerkonten für Administratoren und Lehrer.
 - `username`: STRING, Unique, Not Null
 - `email`: STRING
 - `password`: STRING (Hashed)
-- `authMethod`: ENUM('local', 'ldap'), Default: 'local'
+- `authMethod`: ENUM('local', 'ldap', 'sso'), Default: 'local'
 - `isAdmin`: BOOLEAN, Default: false
 - `isApproved`: BOOLEAN, Default: true
 
@@ -57,8 +57,15 @@ Konfigurationseinstellungen für die gesamte Anwendung.
 - `registration_enabled`: Ob öffentliche Registrierung erlaubt ist ('true'/'false')
 - `vacation_ics_url`: Globale Ferien ICS
 - `holiday_ics_url`: Globale Feiertage ICS
-- `school_name`: [NEU] Anzeigename der Schule
-- `school_logo`: [NEU] Pfad zum hochgeladenen Schullogo (`/uploads/...`)
+- `school_name`: Anzeigename der Schule
+- `school_logo`: Pfad zum hochgeladenen Schullogo (`/uploads/...`)
+- `sso_enabled`: [NEU] SSO-Anmeldung aktiviert ('true'/'false')
+- `sso_jwt_secret`: [NEU] Secret zur Verifizierung des SSO JWT Tokens
+- `sso_login_url`: [NEU] Externe SSO Login-URL für den Login-Button
+- `sso_username_claim`: [NEU] Name des Claims für den Benutzernamen (default: 'username')
+- `sso_email_claim`: [NEU] Name des Claims für die E-Mail (default: 'email')
+- `sso_logout_redirect`: [NEU] Redirect-URL nach dem Abmelden bei SSO
+- `sso_logout_button_text`: [NEU] Beschriftung des Abmelden-Buttons bei SSO
 
 ### `SavedFilters`
 Gespeicherte Filter-Setups für Schnellzugriffs-URLs.

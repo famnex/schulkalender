@@ -119,9 +119,97 @@ router.get('/me', async (req, res) => {
         const decoded = jwt.verify(token, JWT_SECRET);
         const user = await User.findByPk(decoded.id, { attributes: ['id', 'username', 'isAdmin', 'email'] });
         if (!user) return res.status(404).json({ error: 'User not found' });
-        res.json(user);
+        const userJson = user.toJSON();
+        userJson.isSSO = !!decoded.isSSO;
+        res.json(userJson);
     } catch (err) {
         res.status(401).json({ error: 'Invalid token' });
+    }
+});
+
+// POST /api/auth/sso-login
+router.post('/sso-login', async (req, res) => {
+    try {
+        const { token } = req.body;
+        if (!token) {
+            return res.status(400).json({ error: 'SSO-Token fehlt.' });
+        }
+
+        const ssoEnabledSetting = await GlobalSettings.findByPk('sso_enabled');
+        const ssoEnabled = ssoEnabledSetting ? (ssoEnabledSetting.value === 'true') : false;
+        if (!ssoEnabled) {
+            return res.status(403).json({ error: 'SSO-Anmeldung ist deaktiviert.' });
+        }
+
+        const ssoSecretSetting = await GlobalSettings.findByPk('sso_jwt_secret');
+        const ssoSecret = ssoSecretSetting ? ssoSecretSetting.value : null;
+        if (!ssoSecret) {
+            return res.status(500).json({ error: 'SSO ist nicht konfiguriert (Secret fehlt).' });
+        }
+
+        // Verify SSO token
+        let decoded;
+        try {
+            decoded = jwt.verify(token, ssoSecret);
+        } catch (err) {
+            console.error('SSO JWT Verification failed:', err.message);
+            return res.status(401).json({ error: 'Ungültiges SSO-Token.' });
+        }
+
+        const usernameClaimSetting = await GlobalSettings.findByPk('sso_username_claim');
+        const usernameClaim = usernameClaimSetting ? usernameClaimSetting.value : 'username';
+        const emailClaimSetting = await GlobalSettings.findByPk('sso_email_claim');
+        const emailClaim = emailClaimSetting ? emailClaimSetting.value : 'email';
+
+        const username = decoded[usernameClaim] || decoded['sub'];
+        const email = decoded[emailClaim];
+
+        if (!username) {
+            return res.status(400).json({ error: `Benutzername-Claim '${usernameClaim}' nicht im Token gefunden.` });
+        }
+
+        let user = await User.findOne({ where: { username } });
+
+        if (!user) {
+            console.log(`Auto-Provisioning new SSO user: ${username}`);
+            user = await User.create({
+                username,
+                email: email || '',
+                authMethod: 'sso',
+                isAdmin: false,
+                isApproved: true
+            });
+        } else {
+            // Update email if changed and provided
+            if (email && user.email !== email) {
+                console.log(`Syncing email for SSO user ${username}: ${user.email} -> ${email}`);
+                user.email = email;
+                await user.save();
+            }
+        }
+
+        if (!user.isApproved) {
+            return res.status(403).json({ error: 'Account ist deaktiviert oder wartet auf Freigabe.' });
+        }
+
+        const localToken = jwt.sign(
+            { id: user.id, username: user.username, isAdmin: user.isAdmin, isSSO: true },
+            JWT_SECRET,
+            { expiresIn: '8h' }
+        );
+
+        res.json({
+            token: localToken,
+            user: {
+                id: user.id,
+                username: user.username,
+                isAdmin: user.isAdmin,
+                isSSO: true
+            }
+        });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'SSO Login fehlgeschlagen' });
     }
 });
 
