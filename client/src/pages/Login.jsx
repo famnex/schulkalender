@@ -1,13 +1,41 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import api from '../api';
 
 const Login = () => {
-    const { login } = useAuth();
+    const { login, loginSSO } = useAuth();
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
     const [formData, setFormData] = useState({ username: '', password: '' });
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
+    const [settings, setSettings] = useState({});
+
+    useEffect(() => {
+        // Load public settings to check for SSO
+        api.get('/public/settings')
+            .then(res => setSettings(res.data))
+            .catch(console.error);
+    }, []);
+
+    useEffect(() => {
+        const ssoToken = searchParams.get('token') || searchParams.get('sso_token');
+        if (ssoToken) {
+            setLoading(true);
+            setError('');
+            loginSSO(ssoToken)
+                .then(() => {
+                    navigate('/');
+                })
+                .catch(err => {
+                    setError(err.response?.data?.error || 'SSO-Anmeldung fehlgeschlagen');
+                })
+                .finally(() => {
+                    setLoading(false);
+                });
+        }
+    }, [searchParams, loginSSO, navigate]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -81,6 +109,28 @@ const Login = () => {
                         </button>
                     </div>
                 </form>
+
+                {settings.sso_enabled === 'true' && settings.sso_login_url && (
+                    <div className="mt-6">
+                        <div className="relative">
+                            <div className="absolute inset-0 flex items-center">
+                                <div className="w-full border-t border-gray-300 dark:border-slate-600" />
+                            </div>
+                            <div className="relative flex justify-center text-sm">
+                                <span className="px-2 bg-white dark:bg-slate-800 text-gray-500 dark:text-gray-400">Oder</span>
+                            </div>
+                        </div>
+
+                        <div className="mt-6">
+                            <a
+                                href={settings.sso_login_url}
+                                className="w-full flex justify-center py-2 px-4 border border-gray-300 dark:border-slate-600 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-slate-700 hover:bg-gray-50 dark:hover:bg-slate-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-colors text-center"
+                            >
+                                Mit SSO anmelden
+                            </a>
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     );
