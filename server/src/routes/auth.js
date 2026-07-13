@@ -170,20 +170,32 @@ router.post('/sso-login', async (req, res) => {
 
         let user = await User.findOne({ where: { username } });
 
+        const isAdmin = decoded.role === 'admin' || decoded.isAdmin === true || decoded.isAdmin === 'true';
+
         if (!user) {
             console.log(`Auto-Provisioning new SSO user: ${username}`);
             user = await User.create({
                 username,
                 email: email || '',
                 authMethod: 'sso',
-                isAdmin: false,
+                isAdmin: isAdmin,
                 isApproved: true
             });
         } else {
+            let changed = false;
             // Update email if changed and provided
             if (email && user.email !== email) {
                 console.log(`Syncing email for SSO user ${username}: ${user.email} -> ${email}`);
                 user.email = email;
+                changed = true;
+            }
+            // Update admin status if changed
+            if (user.isAdmin !== isAdmin) {
+                console.log(`Syncing isAdmin for SSO user ${username}: ${user.isAdmin} -> ${isAdmin}`);
+                user.isAdmin = isAdmin;
+                changed = true;
+            }
+            if (changed) {
                 await user.save();
             }
         }

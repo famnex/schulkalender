@@ -14,18 +14,41 @@ export const AuthProvider = ({ children }) => {
 
         window.addEventListener('auth-failure', handleAuthFailure);
 
-        const token = localStorage.getItem('token');
-        if (token) {
-            api.get('/auth/me')
+        const params = new URLSearchParams(window.location.search);
+        const ssoToken = params.get('token') || params.get('sso_token');
+
+        if (ssoToken) {
+            setLoading(true);
+            api.post('/auth/sso-login', { token: ssoToken })
                 .then(res => {
-                    setUser(res.data);
+                    localStorage.setItem('token', res.data.token);
+                    setUser(res.data.user);
+                    
+                    // Cleanup URL query params
+                    const url = new URL(window.location.href);
+                    url.searchParams.delete('token');
+                    url.searchParams.delete('sso_token');
+                    window.history.replaceState({}, '', url.pathname + url.search);
                 })
-                .catch(() => {
+                .catch(err => {
+                    console.error('SSO auto-login failed:', err);
                     logout();
                 })
                 .finally(() => setLoading(false));
         } else {
-            setLoading(false);
+            const token = localStorage.getItem('token');
+            if (token) {
+                api.get('/auth/me')
+                    .then(res => {
+                        setUser(res.data);
+                    })
+                    .catch(() => {
+                        logout();
+                    })
+                    .finally(() => setLoading(false));
+            } else {
+                setLoading(false);
+            }
         }
 
         return () => {

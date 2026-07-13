@@ -4,7 +4,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import api from '../api';
 
 const Login = () => {
-    const { login, loginSSO } = useAuth();
+    const { user, login } = useAuth();
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
     const [formData, setFormData] = useState({ username: '', password: '' });
@@ -20,22 +20,10 @@ const Login = () => {
     }, []);
 
     useEffect(() => {
-        const ssoToken = searchParams.get('token') || searchParams.get('sso_token');
-        if (ssoToken) {
-            setLoading(true);
-            setError('');
-            loginSSO(ssoToken)
-                .then(() => {
-                    navigate('/');
-                })
-                .catch(err => {
-                    setError(err.response?.data?.error || 'SSO-Anmeldung fehlgeschlagen');
-                })
-                .finally(() => {
-                    setLoading(false);
-                });
+        if (user) {
+            navigate('/');
         }
-    }, [searchParams, loginSSO, navigate]);
+    }, [user, navigate]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
