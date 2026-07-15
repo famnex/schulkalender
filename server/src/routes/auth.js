@@ -201,6 +201,12 @@ router.post('/sso-login', async (req, res) => {
                 user.displayName = displayName;
                 changed = true;
             }
+            // Update authMethod if not sso
+            if (user.authMethod !== 'sso') {
+                console.log(`Updating authMethod for user ${username}: ${user.authMethod} -> sso`);
+                user.authMethod = 'sso';
+                changed = true;
+            }
             // Update admin status if changed
             if (user.isAdmin !== isAdmin) {
                 console.log(`Syncing isAdmin for SSO user ${username}: ${user.isAdmin} -> ${isAdmin}`);
