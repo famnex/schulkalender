@@ -58,32 +58,34 @@ router.post('/login', async (req, res) => {
             if (ldapUser) {
                 console.log(`Login: LDAP Auth Success for '${username}'`);
 
+                const displayNameAttr = ldapUser.displayName || ldapUser.cn || '';
+
                 if (!user) {
                     // Auto-provision new user
                     console.log(`Auto-Provisioning new LDAP user: ${username}`);
                     user = await User.create({
                         username: username,
                         email: ldapUser.mail || '',
+                        displayName: displayNameAttr,
                         authMethod: 'ldap',
                         isAdmin: false,
                         isApproved: true // Auto-approve LDAP users for now
                     });
                 } else {
                     // Update existing user email if changed
+                    let changed = false;
                     if (ldapUser.mail && user.email !== ldapUser.mail) {
                         console.log(`Syncing email for ${username}: ${user.email} -> ${ldapUser.mail}`);
                         user.email = ldapUser.mail;
-                        await user.save();
+                        changed = true;
                     }
-
-                    // If user was local, maybe switch to LDAP? 
-                    // For now, if they log in via LDAP successfully, we accept it.
-                    // But we keep authMethod as is or update it?
-                    if (user.authMethod === 'local') {
-                        // Optional: Migrate local user to LDAP if names match?
-                        // activeDirectory auth succeeded, so we could update authMethod
-                        // user.authMethod = 'ldap';
-                        // await user.save();
+                    if (displayNameAttr && user.displayName !== displayNameAttr) {
+                        console.log(`Syncing displayName for ${username}: ${user.displayName} -> ${displayNameAttr}`);
+                        user.displayName = displayNameAttr;
+                        changed = true;
+                    }
+                    if (changed) {
+                        await user.save();
                     }
                 }
             } else {
@@ -102,7 +104,7 @@ router.post('/login', async (req, res) => {
             { expiresIn: '8h' }
         );
 
-        res.json({ token, user: { id: user.id, username: user.username, isAdmin: user.isAdmin } });
+        res.json({ token, user: { id: user.id, username: user.username, displayName: user.displayName, isAdmin: user.isAdmin } });
 
     } catch (err) {
         console.error(err);
@@ -117,7 +119,7 @@ router.get('/me', async (req, res) => {
 
     try {
         const decoded = jwt.verify(token, JWT_SECRET);
-        const user = await User.findByPk(decoded.id, { attributes: ['id', 'username', 'isAdmin', 'email'] });
+        const user = await User.findByPk(decoded.id, { attributes: ['id', 'username', 'displayName', 'isAdmin', 'email'] });
         if (!user) return res.status(404).json({ error: 'User not found' });
         const userJson = user.toJSON();
         userJson.isSSO = !!decoded.isSSO;
@@ -160,9 +162,12 @@ router.post('/sso-login', async (req, res) => {
         const usernameClaim = usernameClaimSetting ? usernameClaimSetting.value : 'username';
         const emailClaimSetting = await GlobalSettings.findByPk('sso_email_claim');
         const emailClaim = emailClaimSetting ? emailClaimSetting.value : 'email';
+        const displayNameClaimSetting = await GlobalSettings.findByPk('sso_display_name_claim');
+        const displayNameClaim = displayNameClaimSetting ? displayNameClaimSetting.value : 'display_name';
 
         const username = decoded[usernameClaim] || decoded['sub'];
         const email = decoded[emailClaim];
+        const displayName = decoded[displayNameClaim] || decoded['displayName'];
 
         if (!username) {
             return res.status(400).json({ error: `Benutzername-Claim '${usernameClaim}' nicht im Token gefunden.` });
@@ -177,6 +182,7 @@ router.post('/sso-login', async (req, res) => {
             user = await User.create({
                 username,
                 email: email || '',
+                displayName: displayName || '',
                 authMethod: 'sso',
                 isAdmin: isAdmin,
                 isApproved: true
@@ -187,6 +193,12 @@ router.post('/sso-login', async (req, res) => {
             if (email && user.email !== email) {
                 console.log(`Syncing email for SSO user ${username}: ${user.email} -> ${email}`);
                 user.email = email;
+                changed = true;
+            }
+            // Update displayName if changed and provided
+            if (displayName && user.displayName !== displayName) {
+                console.log(`Syncing displayName for SSO user ${username}: ${user.displayName} -> ${displayName}`);
+                user.displayName = displayName;
                 changed = true;
             }
             // Update admin status if changed
@@ -215,6 +227,7 @@ router.post('/sso-login', async (req, res) => {
             user: {
                 id: user.id,
                 username: user.username,
+                displayName: user.displayName,
                 isAdmin: user.isAdmin,
                 isSSO: true
             }

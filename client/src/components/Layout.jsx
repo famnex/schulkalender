@@ -59,7 +59,7 @@ const Layout = () => {
                     <nav className="flex items-center gap-4">
                         {user ? (
                             <>
-                                <span className="text-sm text-gray-600 dark:text-gray-300 hidden md:block">Hallo, {user.username}</span>
+                                <span className="text-sm text-gray-600 dark:text-gray-300 hidden md:block">Hallo, {user.displayName || user.username}</span>
                                 {user.isAdmin && (
                                     <Link to="/admin" className="p-2 text-gray-500 hover:text-primary dark:text-gray-400 dark:hover:text-blue-400" title="Admin Dashboard">
                                         <Settings size={20} />

@@ -97,8 +97,20 @@ app.use((req, res, next) => {
 });
 
 // Database Sync & Server Start
-sequelize.sync({ alter: false }).then(() => {
+sequelize.sync({ alter: false }).then(async () => {
     console.log('Database synced');
+
+    // Self-healing database migration: add displayName column if it doesn't exist
+    try {
+        await sequelize.query("ALTER TABLE Users ADD COLUMN displayName VARCHAR(255);");
+        console.log("Database Migration: Added column 'displayName' to Users table");
+    } catch (err) {
+        // Safe to ignore if column already exists
+        if (!err.message.includes('duplicate column name') && !err.message.includes('already exists')) {
+            console.log("Database Migration Note:", err.message);
+        }
+    }
+
     app.listen(PORT, () => {
         console.log(`Server running on port ${PORT}`);
     });

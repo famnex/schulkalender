@@ -96,7 +96,7 @@ const AdminUsers = () => {
                     {Array.isArray(users) && users.map(user => (
                         <li key={user.id} className="px-6 py-4 flex items-center justify-between">
                             <div>
-                                <div className="text-sm font-medium text-primary dark:text-blue-400">{user.username}</div>
+                                <div className="text-sm font-medium text-primary dark:text-blue-400">{user.displayName ? `${user.displayName} (${user.username})` : user.username}</div>
                                 <div className="text-xs text-gray-500">{user.email} | Auth: {user.authMethod}</div>
                             </div>
                             <div className="flex items-center gap-4">

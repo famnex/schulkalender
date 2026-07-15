@@ -9,6 +9,7 @@ Benutzerkonten für Administratoren und Lehrer.
 - `id`: INTEGER, Primary Key, Auto-increment
 - `username`: STRING, Unique, Not Null
 - `email`: STRING
+- `displayName`: STRING [NEU]
 - `password`: STRING (Hashed)
 - `authMethod`: ENUM('local', 'ldap', 'sso'), Default: 'local'
 - `isAdmin`: BOOLEAN, Default: false
@@ -64,6 +65,7 @@ Konfigurationseinstellungen für die gesamte Anwendung.
 - `sso_login_url`: [NEU] Externe SSO Login-URL für den Login-Button
 - `sso_username_claim`: [NEU] Name des Claims für den Benutzernamen (default: 'username')
 - `sso_email_claim`: [NEU] Name des Claims für die E-Mail (default: 'email')
+- `sso_display_name_claim`: [NEU] Name des Claims für den Anzeigenamen (default: 'display_name')
 - `sso_logout_redirect`: [NEU] Redirect-URL nach dem Abmelden bei SSO
 - `sso_logout_button_text`: [NEU] Beschriftung des Abmelden-Buttons bei SSO
 

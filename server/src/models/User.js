@@ -17,6 +17,10 @@ const User = sequelize.define('User', {
         type: DataTypes.STRING,
         allowNull: true
     },
+    displayName: {
+        type: DataTypes.STRING,
+        allowNull: true
+    },
     password: {
         type: DataTypes.STRING,
         allowNull: true // Null allowed for LDAP users if needed

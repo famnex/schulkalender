@@ -103,6 +103,18 @@ const AdminSso = () => {
                     <p className="text-xs text-gray-500 mt-1">Claim im Token für die E-Mail-Adresse (z.B. 'email', 'mail').</p>
                 </div>
 
+                <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Display Name Claim Name (optional)</label>
+                    <input 
+                        type="text" 
+                        placeholder="display_name (Standard)" 
+                        value={settings.sso_display_name_claim || ''} 
+                        onChange={e => handleSettingChange('sso_display_name_claim', e.target.value)} 
+                        className="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md dark:bg-slate-700 p-2" 
+                    />
+                    <p className="text-xs text-gray-500 mt-1">Claim im Token für den Anzeigenamen (z.B. 'display_name', 'displayName', 'cn').</p>
+                </div>
+
                 <div className="col-span-1 md:col-span-2 pt-4 border-t border-gray-200 dark:border-slate-700">
                     <h4 className="font-medium mb-2 text-gray-900 dark:text-white">Abmeldeverhalten & Anpassung</h4>
                 </div>
