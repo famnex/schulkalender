@@ -27,15 +27,15 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage });
 
-// Middleware to check Admin
-const isAdmin = async (req, res, next) => {
+// Middleware to check Admin or Manager
+const isManagerOrAdmin = async (req, res, next) => {
     const token = req.headers.authorization?.split(' ')[1];
     if (!token) return res.status(401).json({ error: 'No token' });
 
     try {
         const decoded = jwt.verify(token, JWT_SECRET);
         const user = await User.findByPk(decoded.id);
-        if (user && user.isAdmin) {
+        if (user && (user.isAdmin || user.role === 'manager' || user.role === 'admin')) {
             req.user = user;
             next();
         } else {
@@ -46,7 +46,15 @@ const isAdmin = async (req, res, next) => {
     }
 };
 
-router.use(isAdmin);
+const requireAdminOnly = (req, res, next) => {
+    if (req.user && (req.user.isAdmin || req.user.role === 'admin')) {
+        next();
+    } else {
+        res.status(403).json({ error: 'Zugriff verweigert: Nur für Administratoren.' });
+    }
+};
+
+router.use(isManagerOrAdmin);
 
 // --- Tags (Moved to top for debugging) ---
 router.get('/tags', async (req, res) => {
@@ -94,33 +102,51 @@ router.delete('/tags/:id', async (req, res) => {
 });
 
 // --- Users ---
-router.get('/users', async (req, res) => {
+router.get('/users', requireAdminOnly, async (req, res) => {
     const users = await User.findAll({ attributes: { exclude: ['password'] } });
     res.json(users);
 });
 
-router.post('/users', async (req, res) => {
+router.post('/users', requireAdminOnly, async (req, res) => {
     try {
-        const user = await User.create(req.body);
+        const userData = { ...req.body };
+        if (userData.role) {
+            userData.isAdmin = userData.role === 'admin';
+        } else if (typeof userData.isAdmin === 'boolean') {
+            userData.role = userData.isAdmin ? 'admin' : 'user';
+        }
+        const user = await User.create(userData);
         res.json(user);
     } catch (err) {
         res.status(400).json({ error: err.message });
     }
 });
 
-router.put('/users/:id', async (req, res) => {
+router.put('/users/:id', requireAdminOnly, async (req, res) => {
     try {
         const user = await User.findByPk(req.params.id);
         if (user) {
+            const isSelf = req.user.id === user.id;
+            const newRole = req.body.role || (req.body.isAdmin ? 'admin' : 'user');
+            
             // Prevent self-demotion
-            if (req.user.id === user.id && req.body.isAdmin === false) {
+            if (isSelf && (req.body.isAdmin === false || (req.body.role && req.body.role !== 'admin' && user.isAdmin))) {
                 return res.status(403).json({ error: 'Man kann sich nicht selbst die Admin-Rechte entziehen.' });
             }
-            if (req.user.id === user.id && req.body.isApproved === false) {
+            if (isSelf && req.body.isApproved === false) {
                 return res.status(403).json({ error: 'Man kann sich nicht selbst sperren.' });
             }
 
-            await user.update(req.body);
+            const updateFields = { ...req.body };
+            if (req.body.role) {
+                updateFields.role = req.body.role;
+                updateFields.isAdmin = req.body.role === 'admin';
+            } else if (typeof req.body.isAdmin === 'boolean') {
+                updateFields.isAdmin = req.body.isAdmin;
+                updateFields.role = req.body.isAdmin ? 'admin' : 'user';
+            }
+
+            await user.update(updateFields);
             res.json(user);
         } else {
             res.status(404).json({ error: 'User not found' });
@@ -130,7 +156,7 @@ router.put('/users/:id', async (req, res) => {
     }
 });
 
-router.delete('/users/:id', async (req, res) => {
+router.delete('/users/:id', requireAdminOnly, async (req, res) => {
     // Prevent self-delete
     if (req.user.id == req.params.id) {
         return res.status(403).json({ error: 'Man kann sich nicht selbst löschen.' });
@@ -310,7 +336,10 @@ router.get('/events/pending', async (req, res) => {
         const events = await Event.findAll({
             where: { status: 'pending' },
             order: [['start', 'ASC']],
-            include: [{ model: Category, attributes: ['title'] }]
+            include: [
+                { model: Category, attributes: ['title'] },
+                { model: User, attributes: ['id', 'username', 'displayName', 'email'] }
+            ]
         });
         res.json(events);
     } catch (err) {

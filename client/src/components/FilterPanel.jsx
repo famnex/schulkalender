@@ -47,8 +47,8 @@ const FilterPanel = ({ filters, onFilterChange, eventsLoading, onOpenNewEvent, o
 
     // Fetch pending count
     useEffect(() => {
-        const isAdminRoute = user && (user.isAdmin === true || user.isAdmin === 1);
-        if (isAdminRoute) {
+        const canManageEvents = user && (user.isAdmin === true || user.isAdmin === 1 || user.role === 'manager' || user.role === 'admin');
+        if (canManageEvents) {
             api.get(`/admin/events/pending?_t=${new Date().getTime()}`)
                 .then(res => setPendingCount(Array.isArray(res.data) ? res.data.length : 0))
                 .catch(console.error);
@@ -148,7 +148,7 @@ const FilterPanel = ({ filters, onFilterChange, eventsLoading, onOpenNewEvent, o
                         title="Menü"
                     >
                         <MenuIcon size={24} />
-                        {pendingCount > 0 && user?.isAdmin && (
+                        {pendingCount > 0 && (user?.isAdmin || user?.role === 'manager') && (
                             <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full shadow-sm border border-white dark:border-slate-800">
                                 {pendingCount}
                             </span>
@@ -190,7 +190,7 @@ const FilterPanel = ({ filters, onFilterChange, eventsLoading, onOpenNewEvent, o
                             {user && (
                                 <>
                                     <div className="h-px bg-gray-200 dark:bg-slate-600 my-1 mx-2"></div>
-                                    {(user.isAdmin === true || user.isAdmin === 1) && (
+                                    {(user.isAdmin || user.role === 'manager') && (
                                         <button onClick={() => { onOpenApprovals(); setIsMobileMenuOpen(false); }} className="flex items-center w-full px-3 py-2 hover:bg-gray-100 dark:hover:bg-slate-600 rounded text-sm text-yellow-700 dark:text-yellow-400">
                                             <div className="relative mr-3">
                                                 <Inbox size={18} />
@@ -379,7 +379,7 @@ const FilterPanel = ({ filters, onFilterChange, eventsLoading, onOpenNewEvent, o
                     {user && (
                         <>
                             <div className="w-px bg-gray-200 dark:bg-slate-700 my-1.5 mx-1 h-6"></div>
-                            {(user.isAdmin === true || user.isAdmin === 1) && (
+                            {(user.isAdmin || user.role === 'manager') && (
                                 <div className="relative mr-2">
                                     <button
                                         onClick={onOpenApprovals}

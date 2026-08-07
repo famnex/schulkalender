@@ -98,13 +98,14 @@ router.post('/login', async (req, res) => {
             return res.status(403).json({ error: 'Account ist deaktiviert oder wartet auf Freigabe.' });
         }
 
+        const effectiveRole = user.isAdmin ? 'admin' : (user.role || 'user');
         const token = jwt.sign(
-            { id: user.id, username: user.username, isAdmin: user.isAdmin },
+            { id: user.id, username: user.username, isAdmin: user.isAdmin, role: effectiveRole },
             JWT_SECRET,
             { expiresIn: '8h' }
         );
 
-        res.json({ token, user: { id: user.id, username: user.username, displayName: user.displayName, isAdmin: user.isAdmin } });
+        res.json({ token, user: { id: user.id, username: user.username, displayName: user.displayName, isAdmin: user.isAdmin, role: effectiveRole } });
 
     } catch (err) {
         console.error(err);
@@ -119,10 +120,11 @@ router.get('/me', async (req, res) => {
 
     try {
         const decoded = jwt.verify(token, JWT_SECRET);
-        const user = await User.findByPk(decoded.id, { attributes: ['id', 'username', 'displayName', 'isAdmin', 'email'] });
+        const user = await User.findByPk(decoded.id, { attributes: ['id', 'username', 'displayName', 'isAdmin', 'role', 'email'] });
         if (!user) return res.status(404).json({ error: 'User not found' });
         const userJson = user.toJSON();
         userJson.isSSO = !!decoded.isSSO;
+        userJson.role = user.isAdmin ? 'admin' : (user.role || 'user');
         res.json(userJson);
     } catch (err) {
         res.status(401).json({ error: 'Invalid token' });
@@ -207,10 +209,10 @@ router.post('/sso-login', async (req, res) => {
                 user.authMethod = 'sso';
                 changed = true;
             }
-            // Update admin status if changed
-            if (user.isAdmin !== isAdmin) {
-                console.log(`Syncing isAdmin for SSO user ${username}: ${user.isAdmin} -> ${isAdmin}`);
-                user.isAdmin = isAdmin;
+            // Grant admin status if token specifies admin role, but preserve locally assigned admin role
+            if (isAdmin && !user.isAdmin) {
+                console.log(`Promoting SSO user ${username} to admin based on token claim`);
+                user.isAdmin = true;
                 changed = true;
             }
             if (changed) {
@@ -222,8 +224,9 @@ router.post('/sso-login', async (req, res) => {
             return res.status(403).json({ error: 'Account ist deaktiviert oder wartet auf Freigabe.' });
         }
 
+        const effectiveRole = user.isAdmin ? 'admin' : (user.role || 'user');
         const localToken = jwt.sign(
-            { id: user.id, username: user.username, isAdmin: user.isAdmin, isSSO: true },
+            { id: user.id, username: user.username, isAdmin: user.isAdmin, role: effectiveRole, isSSO: true },
             JWT_SECRET,
             { expiresIn: '8h' }
         );
@@ -235,6 +238,7 @@ router.post('/sso-login', async (req, res) => {
                 username: user.username,
                 displayName: user.displayName,
                 isAdmin: user.isAdmin,
+                role: effectiveRole,
                 isSSO: true
             }
         });

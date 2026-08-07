@@ -162,11 +162,12 @@ const Home = () => {
                         settings={settings}
                         onEventClick={(evt) => {
                             if (user) {
+                                const canManageEvents = user.isAdmin || user.role === 'manager';
                                 if (!evt.isManual) {
-                                    if (user.isAdmin) alert('Dieser Termin wird automatisch synchronisiert und kann hier nicht bearbeitet werden. Bitte ändere ihn im verknüpften Ursprungskalender.');
+                                    if (canManageEvents) alert('Dieser Termin wird automatisch synchronisiert und kann hier nicht bearbeitet werden. Bitte ändere ihn im verknüpften Ursprungskalender.');
                                     return;
                                 }
-                                if (user.isAdmin || (evt.status === 'pending' && evt.creatorId === user.id)) {
+                                if (canManageEvents || (evt.status === 'pending' && evt.creatorId === user.id)) {
                                     setEditingEvent(evt);
                                 } else {
                                     if (evt.creatorId === user.id) {
@@ -184,11 +185,12 @@ const Home = () => {
                         settings={settings}
                         onEventClick={(evt) => {
                             if (user) {
+                                const canManageEvents = user.isAdmin || user.role === 'manager';
                                 if (!evt.isManual) {
-                                    if (user.isAdmin) alert('Dieser Termin wird automatisch synchronisiert und kann hier nicht bearbeitet werden. Bitte ändere ihn im verknüpften Ursprungskalender.');
+                                    if (canManageEvents) alert('Dieser Termin wird automatisch synchronisiert und kann hier nicht bearbeitet werden. Bitte ändere ihn im verknüpften Ursprungskalender.');
                                     return;
                                 }
-                                if (user.isAdmin || (evt.status === 'pending' && evt.creatorId === user.id)) {
+                                if (canManageEvents || (evt.status === 'pending' && evt.creatorId === user.id)) {
                                     setEditingEvent(evt);
                                 } else {
                                     if (evt.creatorId === user.id) {

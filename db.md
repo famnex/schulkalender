@@ -13,6 +13,7 @@ Benutzerkonten für Administratoren und Lehrer.
 - `password`: STRING (Hashed)
 - `authMethod`: ENUM('local', 'ldap', 'sso'), Default: 'local'
 - `isAdmin`: BOOLEAN, Default: false
+- `role`: STRING ('admin', 'manager', 'user'), Default: 'user' [NEU]
 - `isApproved`: BOOLEAN, Default: true
 
 ### `Categories`

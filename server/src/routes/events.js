@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { Event, Category, Tag, SavedFilter, Op } = require('../models');
+const { Event, Category, Tag, SavedFilter, User, Op } = require('../models');
 const { parseISO, startOfMonth, endOfMonth, addMonths, format } = require('date-fns');
 const { authenticateToken, optionalAuthenticateToken } = require('../middleware/auth');
 const crypto = require('crypto');
@@ -160,7 +160,10 @@ router.get('/', optionalAuthenticateToken, async (req, res) => {
         const events = await Event.findAll({
             where,
             order: [['start', 'ASC']],
-            include: [{ model: Category, attributes: ['color', 'title'] }]
+            include: [
+                { model: Category, attributes: ['color', 'title'] },
+                { model: User, attributes: ['id', 'username', 'displayName', 'email'] }
+            ]
         });
 
         res.json(events);
@@ -192,8 +195,8 @@ router.post('/', authenticateToken, async (req, res) => {
             receivedData: req.body,
             foundCategory: cat ? cat.title : 'NICHT GEFUNDEN',
             identifiedUser: req.user ? req.user.username : 'FEHLT',
-            calculatedIsAdmin: req.user ? req.user.isAdmin : false,
-            assignedStatus: req.user && req.user.isAdmin ? 'published' : 'pending',
+            calculatedIsAdmin: req.user ? (req.user.isAdmin || req.user.role === 'manager') : false,
+            assignedStatus: req.user && (req.user.isAdmin || req.user.role === 'manager') ? 'published' : 'pending',
             assignedType: type,
             generatedId: customId
         };
@@ -239,8 +242,9 @@ router.put('/:id', authenticateToken, async (req, res) => {
             return res.status(403).json({ error: 'Gesyncte Termine können nicht bearbeitet werden.' });
         }
         
-        // Permission check
-        if (!req.user.isAdmin) {
+        // Permission check: Admin or Manager can edit any manual event
+        const isManagerOrAdmin = req.user && (req.user.isAdmin || req.user.role === 'manager');
+        if (!isManagerOrAdmin) {
             if (evt.creatorId !== req.user.id) {
                 return res.status(403).json({ error: 'Sie dürfen diesen Termin nicht bearbeiten.' });
             }
@@ -269,7 +273,7 @@ router.put('/:id', authenticateToken, async (req, res) => {
             isManual: true
         };
 
-        if (req.user.isAdmin && req.body.status) {
+        if (isManagerOrAdmin && req.body.status) {
             updateData.status = req.body.status;
         }
 
@@ -291,8 +295,9 @@ router.delete('/:id', authenticateToken, async (req, res) => {
             return res.status(403).json({ error: 'Gesyncte Termine können nicht gelöscht werden.' });
         }
 
-        // Permission check
-        if (!req.user.isAdmin) {
+        // Permission check: Admin or Manager can delete any manual event
+        const isManagerOrAdmin = req.user && (req.user.isAdmin || req.user.role === 'manager');
+        if (!isManagerOrAdmin) {
             if (evt.creatorId !== req.user.id) {
                 return res.status(403).json({ error: 'Sie dürfen diesen Termin nicht bearbeiten.' });
             }

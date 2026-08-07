@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, CheckCircle, Edit3, Loader2 } from 'lucide-react';
+import { X, CheckCircle, Edit3, Loader2, User } from 'lucide-react';
 import api from '../api';
 import { format, parseISO } from 'date-fns';
 import { de } from 'date-fns/locale';
@@ -35,6 +35,33 @@ const PendingEventsModal = ({ onClose, onEventPublished, onEditEvent }) => {
         }
     };
 
+    const formatEventDateTime = (evt) => {
+        if (!evt || !evt.start) return '';
+        const startDate = parseISO(evt.start);
+        const endDate = evt.end ? parseISO(evt.end) : startDate;
+        const sameDay = format(startDate, 'dd.MM.yyyy') === format(endDate, 'dd.MM.yyyy');
+
+        if (evt.isAllDay) {
+            if (sameDay) {
+                return `${format(startDate, 'dd.MM.yyyy')} (Ganztägig)`;
+            } else {
+                return `${format(startDate, 'dd.MM.yyyy')} - ${format(endDate, 'dd.MM.yyyy')} (Ganztägig)`;
+            }
+        } else {
+            const startTimeStr = format(startDate, 'HH:mm');
+            const endTimeStr = format(endDate, 'HH:mm');
+
+            if (sameDay) {
+                if (startTimeStr === endTimeStr) {
+                    return `${format(startDate, 'dd.MM.yyyy')} ${startTimeStr} Uhr`;
+                }
+                return `${format(startDate, 'dd.MM.yyyy')} ${startTimeStr} - ${endTimeStr} Uhr`;
+            } else {
+                return `${format(startDate, 'dd.MM.yyyy HH:mm')} - ${format(endDate, 'dd.MM.yyyy HH:mm')}`;
+            }
+        }
+    };
+
     return (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
             <div className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-full max-w-4xl overflow-hidden flex flex-col max-h-[90vh]">
@@ -67,14 +94,21 @@ const PendingEventsModal = ({ onClose, onEventPublished, onEditEvent }) => {
                                 <div key={evt.id} className="border border-gray-200 dark:border-slate-700 rounded-lg p-4 bg-white dark:bg-slate-800 flex flex-col md:flex-row justify-between gap-4 md:items-center hover:shadow-sm transition-shadow">
                                     <div>
                                         <div className="font-bold text-lg text-gray-900 dark:text-white">{evt.title}</div>
-                                        <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                                            {format(parseISO(evt.start), 'dd.MM.yyyy HH:mm')} - {format(parseISO(evt.end), 'dd.MM.yyyy HH:mm')}
+                                        <div className="text-sm text-gray-600 dark:text-gray-400 mt-1 font-medium">
+                                            {formatEventDateTime(evt)}
                                         </div>
-                                        {evt.Category && (
-                                            <div className="mt-2 text-xs bg-gray-100 dark:bg-slate-700 text-gray-800 dark:text-gray-300 inline-block px-2 py-1 rounded">
-                                                {evt.Category.title}
+                                        <div className="flex flex-wrap items-center gap-2 mt-2">
+                                            {evt.Category && (
+                                                <div className="text-xs bg-gray-100 dark:bg-slate-700 text-gray-800 dark:text-gray-300 inline-block px-2 py-1 rounded">
+                                                    {evt.Category.title}
+                                                </div>
+                                            )}
+                                            <div className="text-xs text-gray-600 dark:text-gray-400 flex items-center gap-1.5 bg-amber-50 dark:bg-amber-950/30 border border-amber-200/60 dark:border-amber-900/40 px-2 py-0.5 rounded">
+                                                <User size={13} className="text-amber-600 dark:text-amber-400 flex-shrink-0" />
+                                                <span>Eingereicht von: <strong className="font-semibold text-gray-800 dark:text-gray-200">{evt.User ? (evt.User.displayName ? `${evt.User.displayName} (${evt.User.username})` : evt.User.username) : 'Unbekannt'}</strong></span>
+                                                {evt.User?.email && <span className="text-gray-400 dark:text-gray-400">({evt.User.email})</span>}
                                             </div>
-                                        )}
+                                        </div>
                                         {evt.location && (
                                             <div className="mt-1 text-sm text-gray-500">Ort: {evt.location}</div>
                                         )}

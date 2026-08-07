@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Calendar, MapPin, Tag, Check } from 'lucide-react';
+import { X, Calendar, MapPin, Tag, Check, User } from 'lucide-react';
 import api from '../api';
 import { useAuth } from '../context/AuthContext';
 
@@ -8,7 +8,8 @@ const NewEventModal = ({ onClose, categories, tags = [], onEventCreated, editEve
     const [error, setError] = useState(null);
     const { user } = useAuth();
     
-    const isPendingApproval = user?.isAdmin && editEvent?.status === 'pending';
+    const canManageEvents = user?.isAdmin || user?.role === 'manager';
+    const isPendingApproval = canManageEvents && editEvent?.status === 'pending';
 
     // Helpers for date formatting
     const formatDate = (date, allDay) => {
@@ -201,6 +202,22 @@ const NewEventModal = ({ onClose, categories, tags = [], onEventCreated, editEve
                     {error && (
                         <div className="mb-4 p-3 bg-red-50 text-red-700 border border-red-200 rounded-lg text-sm">
                             {error}
+                        </div>
+                    )}
+
+                    {(isPendingApproval || (isEditing && editEvent?.User)) && (
+                        <div className="mb-5 p-3 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/60 rounded-lg text-sm text-amber-900 dark:text-amber-200 flex items-center gap-2.5">
+                            <User size={18} className="text-amber-600 dark:text-amber-400 flex-shrink-0" />
+                            <div>
+                                <div className="font-semibold text-amber-950 dark:text-amber-100">
+                                    Eingereicht von: {editEvent?.User ? (editEvent.User.displayName ? `${editEvent.User.displayName} (${editEvent.User.username})` : editEvent.User.username) : 'Unbekannt'}
+                                </div>
+                                {editEvent?.User?.email && (
+                                    <div className="text-xs text-amber-700 dark:text-amber-300 mt-0.5">
+                                        E-Mail: {editEvent.User.email}
+                                    </div>
+                                )}
+                            </div>
                         </div>
                     )}
 
