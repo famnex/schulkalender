@@ -7,6 +7,7 @@ import Login from './pages/Login';
 import AdminDashboard from './pages/AdminDashboard';
 
 import PrintView from './pages/PrintView';
+import ErrorBoundary from './components/ErrorBoundary';
 
 // Protected Route Wrapper
 const ProtectedRoute = ({ children, requireAdmin = false }) => {
@@ -19,23 +20,25 @@ const ProtectedRoute = ({ children, requireAdmin = false }) => {
 
 const App = () => {
     return (
-        <BrowserRouter basename="/kalender_new">
-            <AuthProvider>
-                <Routes>
-                    <Route path="/print" element={<PrintView />} />
-                    <Route path="/" element={<Layout />}>
-                        <Route index element={<Home />} />
-                        <Route path="login" element={<Login />} />
+        <ErrorBoundary>
+            <BrowserRouter basename="/kalender_new">
+                <AuthProvider>
+                    <Routes>
+                        <Route path="/print" element={<PrintView />} />
+                        <Route path="/" element={<Layout />}>
+                            <Route index element={<Home />} />
+                            <Route path="login" element={<Login />} />
 
-                        <Route path="admin" element={
-                            <ProtectedRoute requireAdmin={true}>
-                                <AdminDashboard />
-                            </ProtectedRoute>
-                        } />
-                    </Route>
-                </Routes>
-            </AuthProvider>
-        </BrowserRouter>
+                            <Route path="admin" element={
+                                <ProtectedRoute requireAdmin={true}>
+                                    <AdminDashboard />
+                                </ProtectedRoute>
+                            } />
+                        </Route>
+                    </Routes>
+                </AuthProvider>
+            </BrowserRouter>
+        </ErrorBoundary>
     );
 };
 

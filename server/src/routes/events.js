@@ -5,6 +5,22 @@ const { parseISO, startOfMonth, endOfMonth, addMonths, format } = require('date-
 const { authenticateToken, optionalAuthenticateToken } = require('../middleware/auth');
 const crypto = require('crypto');
 
+const parseSafeDate = (dateStr, fallbackDate) => {
+    if (!dateStr || typeof dateStr !== 'string') return fallbackDate;
+    const trimmed = dateStr.trim();
+    if (!trimmed) return fallbackDate;
+    let s = trimmed;
+    if (/^\d{4}-\d{1,2}$/.test(trimmed)) {
+        const [y, m] = trimmed.split('-');
+        s = `${y}-${m.padStart(2, '0')}-01`;
+    }
+    const d = parseISO(s);
+    if (!isNaN(d.getTime())) return d;
+    const f = new Date(trimmed);
+    if (!isNaN(f.getTime())) return f;
+    return fallbackDate;
+};
+
 // GET /api/events
 // Query params: start (YYYY-MM), end (YYYY-MM), categoryId, tags (comma separated), stufe
 router.get('/', optionalAuthenticateToken, async (req, res) => {
@@ -12,15 +28,13 @@ router.get('/', optionalAuthenticateToken, async (req, res) => {
         const { start, end, categoryId, tags, stufe } = req.query;
 
         // Date Range (default: 6 months from now)
-        let startDate, endDate;
-        if (start) {
-            startDate = startOfMonth(parseISO(start));
-        } else {
-            startDate = startOfMonth(new Date());
-        }
+        const rawStart = parseSafeDate(start, new Date());
+        const startDate = startOfMonth(rawStart);
 
+        let endDate;
         if (end) {
-            endDate = endOfMonth(parseISO(end));
+            const rawEnd = parseSafeDate(end, addMonths(startDate, 5));
+            endDate = endOfMonth(rawEnd);
         } else {
             endDate = endOfMonth(addMonths(startDate, 5));
         }

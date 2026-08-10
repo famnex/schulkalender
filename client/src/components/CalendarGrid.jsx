@@ -4,6 +4,42 @@ import { de } from 'date-fns/locale';
 import clsx from 'clsx';
 
 
+const getValidStartDate = (monthStr) => {
+    if (!monthStr || typeof monthStr !== 'string') {
+        return startOfMonth(new Date());
+    }
+    const trimmed = monthStr.trim();
+    if (!trimmed) {
+        return startOfMonth(new Date());
+    }
+
+    let dateToParse = trimmed;
+    if (/^\d{4}-\d{1,2}$/.test(trimmed)) {
+        const [y, m] = trimmed.split('-');
+        dateToParse = `${y}-${m.padStart(2, '0')}-01`;
+    }
+
+    const parsed = parseISO(dateToParse);
+    if (!isNaN(parsed.getTime())) {
+        return startOfMonth(parsed);
+    }
+    const fallback = new Date(trimmed);
+    if (!isNaN(fallback.getTime())) {
+        return startOfMonth(fallback);
+    }
+    return startOfMonth(new Date());
+};
+
+const getValidDate = (dateVal) => {
+    if (!dateVal) return null;
+    if (dateVal instanceof Date) return isNaN(dateVal.getTime()) ? null : dateVal;
+    const parsed = typeof dateVal === 'string' ? parseISO(dateVal) : new Date(dateVal);
+    if (!isNaN(parsed.getTime())) return parsed;
+    const fallback = new Date(dateVal);
+    if (!isNaN(fallback.getTime())) return fallback;
+    return null;
+};
+
 const CalendarGrid = ({ events, startMonthStr, monthsToShow = 6, settings = {}, onEventClick }) => {
     const containerRef = React.useRef(null);
     const [isTooTall, setIsTooTall] = React.useState(false);
@@ -19,9 +55,6 @@ const CalendarGrid = ({ events, startMonthStr, monthsToShow = 6, settings = {}, 
                     if (h > maxMonthHeight) maxMonthHeight = h;
                 });
 
-                // Threshold for A4 landscape (~210mm) is approx 790px at 96dpi.
-                // Subtracting header (~50px) and margins (~40px) leaves approx 700px.
-                // Setting safe threshold to 680px to assert compact mode early.
                 const threshold = 680;
                 const tooTall = maxMonthHeight > threshold;
 
@@ -39,19 +72,20 @@ const CalendarGrid = ({ events, startMonthStr, monthsToShow = 6, settings = {}, 
         return () => clearTimeout(timer);
     }, [events, monthsToShow, startMonthStr, settings]);
 
-    // Generate months based on startMonthStr (YYYY-MM)
-    const startDate = parseISO(startMonthStr + '-01');
-    const months = Array.from({ length: monthsToShow }).map((_, i) => addMonths(startDate, i));
+    // Generate months safely based on startMonthStr (YYYY-MM)
+    const startDate = getValidStartDate(startMonthStr);
+    const months = Array.from({ length: monthsToShow || 6 }).map((_, i) => addMonths(startDate, i));
 
     // Helper to find events for a day
     const getEventsForDay = (date) => {
-        if (!Array.isArray(events)) return [];
+        if (!Array.isArray(events) || !date || isNaN(date.getTime())) return [];
         return events.filter(e => {
+            if (!e || !e.start || !e.end) return false;
             const dayStart = startOfDay(date);
-            const evtStart = new Date(e.start);
-            const evtEnd = new Date(e.end);
+            const evtStart = getValidDate(e.start);
+            const evtEnd = getValidDate(e.end);
+            if (!evtStart || !evtEnd) return false;
             // Overlap: (EventStart <= DayEnd) and (EventEnd >= DayStart)
-            // DayEnd is start of day + 24h (approx)
             return evtStart <= new Date(dayStart.getTime() + 86399999) && evtEnd >= dayStart;
         });
     };
@@ -66,9 +100,10 @@ const CalendarGrid = ({ events, startMonthStr, monthsToShow = 6, settings = {}, 
     const weekendTextColor = settings.weekend_text_color || '#4B5563';
 
     const getPrintTimeStr = (evt, currentDay) => {
-        if (evt.isAllDay) return '';
-        const start = new Date(evt.start);
-        const end = new Date(evt.end);
+        if (!evt || evt.isAllDay || !evt.start || !evt.end || !currentDay || isNaN(currentDay.getTime())) return '';
+        const start = getValidDate(evt.start);
+        const end = getValidDate(evt.end);
+        if (!start || !end) return '';
         
         const isStartDay = isSameDay(start, currentDay);
         const isEndDay = isSameDay(end, currentDay);
@@ -334,9 +369,10 @@ const CalendarGrid = ({ events, startMonthStr, monthsToShow = 6, settings = {}, 
 
                             <div className="flex-grow p-1.5 overflow-hidden flex flex-col justify-center print:p-0">
                                 {(!isPast || isSameDay(day, new Date())) && dayEvents.map((evt, idx) => {
-                                    if (idx > 3) return null;
-                                    const evtStart = parseISO(evt.start);
-                                    const evtEnd = parseISO(evt.end);
+                                    if (idx > 3 || !evt || !evt.start || !evt.end) return null;
+                                    const evtStart = getValidDate(evt.start);
+                                    const evtEnd = getValidDate(evt.end);
+                                    if (!evtStart || !evtEnd) return null;
 
                                     const isFirstDayOfEvent = isSameDay(evtStart, day);
                                     const isFirstDayOfMonth = day.getDate() === 1;
@@ -405,7 +441,7 @@ const CalendarGrid = ({ events, startMonthStr, monthsToShow = 6, settings = {}, 
 
                 return (
                     <div
-                        key={`month-card-${month.toISOString()}`}
+                        key={`month-card-${month && !isNaN(month.getTime()) ? month.toISOString() : monthIdx}`}
                         className={clsx(
                             "border border-gray-800 dark:border-gray-400 rounded-lg overflow-hidden break-inside-avoid shadow-sm print:shadow-none print:border-black",
                             monthsToShow > 1 && "lg:hidden print:hidden",

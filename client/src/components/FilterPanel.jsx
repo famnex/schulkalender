@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import api from '../api';
 import { useAuth } from '../context/AuthContext';
-import { Filter, Calendar as CalIcon, RefreshCw, Printer, Search, CalendarPlus, ChevronDown, ChevronUp, Share, Check, Plus, LayoutGrid, List, Inbox, Menu as MenuIcon } from 'lucide-react';
+import { Filter, Calendar as CalIcon, RefreshCw, Printer, Search, CalendarPlus, ChevronDown, ChevronUp, Share, Check, Plus, LayoutGrid, List, Inbox, Menu as MenuIcon, ChevronLeft, ChevronRight } from 'lucide-react';
+import { format, parseISO, addMonths } from 'date-fns';
 import clsx from 'clsx';
 import CalendarExportModal from './CalendarExportModal';
 
@@ -96,6 +97,21 @@ const FilterPanel = ({ filters, onFilterChange, eventsLoading, onOpenNewEvent, o
 
     const handleStufeChange = (e) => {
         onFilterChange({ ...filters, stufe: e.target.value });
+    };
+    const handlePrevMonth = () => {
+        const currentStr = filters.startMonth || format(new Date(), 'yyyy-MM');
+        const current = parseISO(currentStr + '-01');
+        const validCurrent = isNaN(current.getTime()) ? new Date() : current;
+        const prev = addMonths(validCurrent, -1);
+        onFilterChange({ ...filters, startMonth: format(prev, 'yyyy-MM') });
+    };
+
+    const handleNextMonth = () => {
+        const currentStr = filters.startMonth || format(new Date(), 'yyyy-MM');
+        const current = parseISO(currentStr + '-01');
+        const validCurrent = isNaN(current.getTime()) ? new Date() : current;
+        const next = addMonths(validCurrent, 1);
+        onFilterChange({ ...filters, startMonth: format(next, 'yyyy-MM') });
     };
 
     const handlePrint = (months) => {
@@ -265,13 +281,35 @@ const FilterPanel = ({ filters, onFilterChange, eventsLoading, onOpenNewEvent, o
                             </select>
                         )}
 
-                        {/* Date Picker (Start Month) */}
-                        <input
-                            type="month"
-                            className="form-input block w-full md:w-auto rounded-md border-gray-300 shadow-sm dark:bg-slate-700 dark:border-slate-600 dark:text-white"
-                            value={filters.startMonth}
-                            onChange={(e) => onFilterChange({ ...filters, startMonth: e.target.value })}
-                        />
+                        {/* Date Picker (Start Month) with prev/next navigation */}
+                        <div className="flex items-center gap-1 w-full md:w-auto shrink-0">
+                            <button
+                                type="button"
+                                onClick={handlePrevMonth}
+                                className="p-2 border border-gray-300 dark:border-slate-600 rounded-md hover:bg-gray-100 dark:hover:bg-slate-700 text-gray-700 dark:text-gray-200 transition-colors shadow-sm"
+                                title="Vorheriger Monat"
+                            >
+                                <ChevronLeft size={16} />
+                            </button>
+                            <input
+                                type="month"
+                                className="form-input block w-full md:w-auto rounded-md border-gray-300 shadow-sm dark:bg-slate-700 dark:border-slate-600 dark:text-white text-sm py-1.5"
+                                value={filters.startMonth || format(new Date(), 'yyyy-MM')}
+                                onChange={(e) => {
+                                    if (e.target.value) {
+                                        onFilterChange({ ...filters, startMonth: e.target.value });
+                                    }
+                                }}
+                            />
+                            <button
+                                type="button"
+                                onClick={handleNextMonth}
+                                className="p-2 border border-gray-300 dark:border-slate-600 rounded-md hover:bg-gray-100 dark:hover:bg-slate-700 text-gray-700 dark:text-gray-200 transition-colors shadow-sm"
+                                title="Nächster Monat"
+                            >
+                                <ChevronRight size={16} />
+                            </button>
+                        </div>
                     </div>
 
                     {/* View Mode Toggle */}
